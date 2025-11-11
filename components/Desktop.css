@@ -1,0 +1,36 @@
+.wallpaper {
+    background-image: var(--wallpaper-url);
+}
+
+.wallpaper.matrix-effect {
+    filter: blur(8px);
+}
+
+.dark {
+    --accent-color-rgb: 0,255,255;
+}
+
+.light {
+    --accent-color-rgb: 59, 130, 246;
+}
+
+.ai-indicator.loading {
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 20px 5px rgba(var(--accent-color-rgb),0.7);
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 0 20px 5px rgba(var(--accent-color-rgb), 0.7); 
+    }
+    50% { 
+        transform: scale(1.1); 
+        box-shadow: 0 0 30px 10px rgba(var(--accent-color-rgb), 0.7); 
+    }
+}
+
+.taskbar-blur {
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+}

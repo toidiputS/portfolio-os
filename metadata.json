@@ -1,0 +1,7 @@
+{
+  "name": "Doors OS",
+  "description": "A feature-rich portfolio application designed to mimic the Windows 11 desktop experience, complete with draggable windows, a taskbar, a start menu, and integrated Gemini AI chat functionality.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
