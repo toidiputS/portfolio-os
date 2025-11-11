@@ -97,7 +97,7 @@ const GeminiChat: React.FC = () => {
               className={`flex justify-between items-center p-2 mb-1 text-sm rounded-md cursor-pointer transition-colors ${
                 gemini.currentSessionId === session.id ? 'bg-[hsl(var(--muted-hsl))]' : 'hover:bg-[hsl(var(--secondary-hsl))]'
               }`}>
-              <span className="truncate flex-grow mr-2">{session.title}</span>
+              <span className="truncate grow mr-2">{session.title}</span>
               <button type="button" title="Delete chat session" onClick={(e) => { e.stopPropagation(); deleteChatSession(session.id); }} className="p-1 text-[hsl(var(--muted-foreground-hsl))] hover:text-[hsl(var(--destructive-hsl))] opacity-50 hover:opacity-100 shrink-0">
                   <Trash2 size={14}/>
               </button>
@@ -122,6 +122,7 @@ const GeminiChat: React.FC = () => {
               <input type="checkbox" checked={gemini.useSmartContext} onChange={toggleSmartContext} className="sr-only" />
             </label>
             <select
+              title="Model"
               value={gemini.model}
               onChange={(e) => setGeminiModel(e.target.value as GeminiModel)}
               className="bg-[hsl(var(--secondary-hsl))] border border-[hsl(var(--border-hsl))] rounded-md p-1 text-sm focus:outline-none"
@@ -185,6 +186,7 @@ const GeminiChat: React.FC = () => {
               disabled={gemini.isLoading}
             />
             <button
+              title="Send message"
               onClick={handleSend}
               disabled={gemini.isLoading || !input.trim()}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-[hsl(var(--accent-strong-hsl))] text-[hsl(var(--accent-foreground-hsl))] disabled:bg-[hsl(var(--muted-hsl))] hover:brightness-90 transition-all"

@@ -205,7 +205,8 @@ const VoiceAssistant: React.FC = () => {
                         
                         if (message.serverContent?.turnComplete) {
                             if (!lastTurnCompleteRef.current) {
-                                if (transcriptionState.current.input.trim()) addTranscriptMessage({ source: 'user', text: transcriptionState.current.input.trim() });
+                                // Process user input for AI but don't display in transcript
+                                // if (transcriptionState.current.input.trim()) addTranscriptMessage({ source: 'user', text: transcriptionState.current.input.trim() });
                                 if (transcriptionState.current.output.trim()) {
                                     const modelOutput = transcriptionState.current.output.trim();
                                     addTranscriptMessage({ source: 'model', text: modelOutput });
@@ -221,18 +222,34 @@ const VoiceAssistant: React.FC = () => {
                         const audioData = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
                         if (audioData && outputAudioContextRef.current) {
                             setLiveSessionState('speaking');
+                            // Disconnect microphone input while AI is speaking to prevent feedback loop
+                            if (scriptProcessorRef.current && inputAudioContextRef.current) {
+                                try {
+                                    scriptProcessorRef.current.disconnect(inputAudioContextRef.current.destination);
+                                } catch (e) {
+                                    console.warn("Error disconnecting script processor:", e);
+                                }
+                            }
                             const outputCtx = outputAudioContextRef.current;
                             const audioBuffer = await decodeAudioData(decode(audioData), outputCtx, OUTPUT_SAMPLE_RATE, 1);
-                            
+
                             const source = outputCtx.createBufferSource();
                             source.buffer = audioBuffer;
                             source.connect(outputCtx.destination);
-                            
+
                             source.onended = () => {
                                 audioSourcesRef.current.delete(source);
-                                if (audioSourcesRef.current.size === 0) setLiveSessionState('listening');
+                                // Reconnect microphone input after AI speech ends
+                                if (scriptProcessorRef.current && inputAudioContextRef.current && audioSourcesRef.current.size === 0) {
+                                    try {
+                                        scriptProcessorRef.current.connect(inputAudioContextRef.current.destination);
+                                    } catch (e) {
+                                        console.warn("Error reconnecting script processor:", e);
+                                    }
+                                    setLiveSessionState('listening');
+                                }
                             };
-                            
+
                             const currentTime = outputCtx.currentTime;
                             nextStartTimeRef.current = Math.max(nextStartTimeRef.current, currentTime);
                             source.start(nextStartTimeRef.current);
