@@ -9,6 +9,7 @@ import Sidebar from './components/Sidebar';
 import { APPS_CONFIG } from './apps.config';
 import VoiceAssistant from './components/VoiceAssistant';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 
 const ConversationTranscript: React.FC = () => {
     const transcript = useKernel(state => state.conversationTranscript);
@@ -114,6 +115,7 @@ const App: React.FC = () => {
           <Taskbar />
         </motion.div>
       )}
+      <Analytics />
     </AnimatePresence>
   );
 };
