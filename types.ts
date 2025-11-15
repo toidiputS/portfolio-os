@@ -45,10 +45,7 @@ export interface ChatSession {
 
 export type GeminiModel = 'gemini-2.5-flash' | 'gemini-2.5-pro';
 
-export type TranscriptMessage = {
-  source: 'user' | 'model' | 'system';
-  text: string;
-};
+
 
 export interface GeminiState {
   model: GeminiModel;
@@ -59,7 +56,7 @@ export interface GeminiState {
   useGrounding: boolean;
 }
 
-export type LiveSessionState = 'idle' | 'connecting' | 'listening' | 'speaking' | 'error';
+
 
 export type Theme = 'dark' | 'light';
 
@@ -76,11 +73,7 @@ export interface KernelState {
   isSidebarOpen: boolean;
   isMatrixEffectActive: boolean;
   hasNewMessage: boolean;
-  liveSessionState: LiveSessionState;
   theme: Theme;
-  conversationTranscript: TranscriptMessage[];
-  hasInitialGreetingBeenSpoken: boolean;
-  micPermissionGranted: boolean;
 
   openWindow: (appId: AppId, size?: {width: number, height: number}) => void;
   closeWindow: (id: string) => void;
@@ -111,10 +104,5 @@ export interface KernelState {
   closeSidebar: () => void;
   toggleMatrixEffect: (status: boolean) => void;
   setHasNewMessage: (status: boolean) => void;
-  setLiveSessionState: (state: LiveSessionState) => void;
   toggleTheme: () => void;
-  addTranscriptMessage: (message: TranscriptMessage) => void;
-  resetTranscript: () => void;
-  setInitialGreetingSpoken: (status: boolean) => void;
-  setMicPermissionGranted: (status: boolean) => void;
 }

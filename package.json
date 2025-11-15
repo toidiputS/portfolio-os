@@ -1,7 +1,7 @@
 {
-  "name": "doors-os",
+  "name": "portfolio-os",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@21st-extension/react": "^0.5.14",
-    "@google/genai": "^1.29.0",
     "@google/generative-ai": "^0.24.1",
     "@vercel/analytics": "^1.5.0",
     "class-variance-authority": "^0.7.1",

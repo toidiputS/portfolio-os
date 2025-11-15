@@ -4,7 +4,7 @@ import { useKernel } from '../store/kernel';
 import SphereImageGrid from './SphereImageGrid'; // Import SphereImageGrid
 import ContextMenu from './ContextMenu';
 import MatrixRain from './MatrixRain';
-import VoiceAssistant from './VoiceAssistant';
+
 import Taskbar from './Taskbar';
 import { APPS } from '../apps.config';
 
@@ -79,7 +79,7 @@ const Desktop: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {isMatrixEffectActive && <MatrixRain />}
       <div
         ref={wallpaperRef}
-        className={`wallpaper absolute inset-[-20px] bg-cover bg-center transition-transform duration-300 ease-out ${isMatrixEffectActive ? 'matrix-effect' : ''}`}
+        className={`wallpaper absolute inset-5 bg-cover bg-center transition-transform duration-300 ease-out ${isMatrixEffectActive ? 'matrix-effect' : ''}`}
       />
       
       <div className="absolute inset-0">
@@ -103,7 +103,7 @@ const Desktop: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         }`}
       />
 
-      <VoiceAssistant />
+
       <Taskbar />
     </main>
   );

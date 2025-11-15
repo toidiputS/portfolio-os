@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
-import { AppId, ChatMessage, ChatSession, GeminiModel, KernelState, LiveSessionState, WindowInstance, Theme, TranscriptMessage } from '../types';
+import { AppId, ChatMessage, ChatSession, GeminiModel, KernelState, WindowInstance, Theme } from '../types';
 
 const useKernelStore = create<KernelState>()(
   persist(
@@ -27,11 +27,7 @@ const useKernelStore = create<KernelState>()(
       isSidebarOpen: false,
       isMatrixEffectActive: false,
       hasNewMessage: false,
-      liveSessionState: 'idle',
       theme: 'dark',
-      conversationTranscript: [],
-      hasInitialGreetingBeenSpoken: false,
-      micPermissionGranted: false,
 
       openWindow: (appId, size = { width: 800, height: 600 }) => {
         const newWindow: WindowInstance = {
@@ -227,18 +223,7 @@ const useKernelStore = create<KernelState>()(
       closeSidebar: () => set({ isSidebarOpen: false }),
       toggleMatrixEffect: (status) => set({ isMatrixEffectActive: status }),
       setHasNewMessage: (status) => set({ hasNewMessage: status }),
-      setLiveSessionState: (state: LiveSessionState) => {
-        if (get().liveSessionState !== state) {
-            set({ liveSessionState: state });
-        }
-      },
       toggleTheme: () => set(state => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
-      addTranscriptMessage: (message: TranscriptMessage) => set(state => ({
-        conversationTranscript: [...state.conversationTranscript, message]
-      })),
-      resetTranscript: () => set({ conversationTranscript: [] }),
-      setInitialGreetingSpoken: (status) => set({ hasInitialGreetingBeenSpoken: status }),
-      setMicPermissionGranted: (status) => set({ micPermissionGranted: status }),
     }),
     {
       name: 'win11-portfolio-storage',

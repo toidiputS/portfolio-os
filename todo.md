@@ -1,0 +1,6 @@
+- [x] Analyze the microphone permission flow issue
+- [x] Identify that VoiceAssistant fails to start when mic permission is not granted
+- [x] Modify VoiceAssistant to start session even without mic permission
+- [x] Handle getUserMedia failure gracefully in onopen callback
+- [x] Test that initial greeting "hello, How can I help you today?" works without mic
+- [ ] Ensure voice assistant can still function when mic becomes available later
