@@ -1,25 +1,22 @@
-import React, { lazy, Suspense, useEffect, useRef } from 'react';
-import './index.css';
-import { useKernel } from './store/kernel';
-import Desktop from './components/Desktop';
-import Taskbar from './components/Taskbar';
-import Window from './components/Window';
-import WelcomeScreen from './components/WelcomeScreen';
-import Sidebar from './components/Sidebar';
-import { APPS_CONFIG } from './apps.config';
+import React, { lazy, Suspense, useEffect, useRef } from "react";
+import "./index.css";
+import { useKernel } from "./store/kernel";
+import Desktop from "./components/Desktop";
+import Taskbar from "./components/Taskbar";
+import Window from "./components/Window";
+import WelcomeScreen from "./components/WelcomeScreen";
+import Sidebar from "./components/Sidebar";
+import { APPS_CONFIG } from "./apps.config";
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { Analytics } from '@vercel/analytics/react';
-
-
-
+import { motion, AnimatePresence } from "framer-motion";
+import { Analytics } from "@vercel/analytics/react";
 
 const App: React.FC = () => {
-  const windows = useKernel(state => state.windows);
-  const hasWelcomed = useKernel(state => state.hasWelcomed);
-  const setHasWelcomed = useKernel(state => state.setHasWelcomed);
+  const windows = useKernel((state) => state.windows);
+  const hasWelcomed = useKernel((state) => state.hasWelcomed);
+  const setHasWelcomed = useKernel((state) => state.setHasWelcomed);
 
-  const theme = useKernel(state => state.theme);
+  const theme = useKernel((state) => state.theme);
 
   useEffect(() => {
     // Reset welcome state on every app load
@@ -28,10 +25,10 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
+    if (theme === "dark") {
+      root.classList.add("dark");
     } else {
-      root.classList.remove('dark');
+      root.classList.remove("dark");
     }
   }, [theme]);
 
@@ -48,12 +45,14 @@ const App: React.FC = () => {
           className="h-screen w-screen overflow-hidden bg-black font-sans"
         >
           <Desktop>
-            {windows.map(win => {
+            {windows.map((win) => {
               const App = APPS_CONFIG[win.appId]?.component;
               if (!App) return null;
               return (
                 <Window key={win.id} {...win}>
-                  <Suspense fallback={<div className="p-4">Loading App...</div>}>
+                  <Suspense
+                    fallback={<div className="p-4">Loading App...</div>}
+                  >
                     <App />
                   </Suspense>
                 </Window>

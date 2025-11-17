@@ -17,16 +17,6 @@
     icon-implosion 0.28s ease-in 0.18s forwards;
 }
 
-/* Portal ring flare (you already hooked this in SphereImageGrid) */
-.portal-ring {
-  transition: box-shadow 0.25s ease-out, filter 0.25s ease-out;
-}
-
-.portal-ring--flare,
-.sphere-image-grid--flare {
-  animation: portal-flare 0.35s ease-out;
-}
-
 /* The warp particle that flies to the center of the screen */
 .launch-warp-particle {
   position: fixed;
@@ -39,23 +29,11 @@
   box-shadow: 0 0 16px rgba(77, 227, 255, 0.95);
   pointer-events: none;
   transform-origin: center;
+  /* Use CSS custom properties for dynamic positioning */
+  transform: translate3d(var(--warp-x, 0px), var(--warp-y, 0px), 0px) scale(var(--warp-scale, 0.8));
+  opacity: var(--warp-opacity, 0);
   transition: transform 0.35s ease-out, opacity 0.35s ease-out;
   z-index: 9999;
-}
-
-.launch-warp-particle--dynamic {
-  transform-origin: center;
-  transition: transform 0.35s ease-out, opacity 0.35s ease-out;
-}
-
-.launch-warp-particle--dynamic {
-  transform-origin: center;
-  transition: transform 0.35s ease-out, opacity 0.35s ease-out;
-}
-
-.launch-warp-particle--dynamic-styles {
-  transform-origin: center;
-  transition: transform 0.35s ease-out, opacity 0.35s ease-out;
 }
 
 /* Keyframes */
@@ -81,20 +59,5 @@
   100% {
     transform: scale(0.05);
     opacity: 0;
-  }
-}
-
-@keyframes portal-flare {
-  0% {
-    box-shadow: 0 0 20px rgba(77, 227, 255, 0.4);
-    filter: drop-shadow(0 0 16px rgba(77, 227, 255, 0.6));
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(77, 227, 255, 1);
-    filter: drop-shadow(0 0 32px rgba(77, 227, 255, 1));
-  }
-  100% {
-    box-shadow: 0 0 20px rgba(77, 227, 255, 0.4);
-    filter: drop-shadow(0 0 16px rgba(77, 227, 255, 0.6));
   }
 }

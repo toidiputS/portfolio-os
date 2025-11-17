@@ -1,24 +1,4 @@
-import {
-  AppId,
-  AppDefinition,
-  ChatMessage,
-  ChatSession,
-  GeminiModel,
-  GroundingChunk,
-  Theme,
-  WindowInstance,
-} from "./src/types";
-
-export type {
-  AppId,
-  AppDefinition,
-  ChatMessage,
-  ChatSession,
-  GeminiModel,
-  GroundingChunk,
-  Theme,
-  WindowInstance,
-};
+import { AppId, ChatMessage, ChatSession, GeminiModel, Theme, WindowInstance } from './types';
 
 export interface KernelState {
   windows: WindowInstance[];
@@ -42,8 +22,6 @@ export interface KernelState {
   isMatrixEffectActive: boolean;
   hasNewMessage: boolean;
   theme: Theme;
-  initialGreetingSpoken: boolean;
-  micPermissionGranted: boolean;
   setInitialGreetingSpoken: (status: boolean) => void;
   setMicPermissionGranted: (status: boolean) => void;
 

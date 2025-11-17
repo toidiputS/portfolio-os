@@ -1,12 +1,13 @@
-// src/components/LaunchIconWrapper.tsx
+// components/LaunchIconWrapper.tsx
 import React, { useEffect, useRef, useState } from "react";
 import "./PortalLaunchAnimations.css";
 
 interface LaunchIconWrapperProps {
-  children: React.ReactNode; // your icon (svg etc.)
-  onLaunchComplete: () => void; // called after animation, open window
-  triggerPortalFlare?: () => void; // tells portal to flare
-  animationDurationMs?: number; // default 300ms
+  children: React.ReactNode;          // your icon (svg etc.)
+  onLaunchComplete: () => void;       // called after animation, open window
+  triggerPortalFlare?: () => void;    // tells portal to flare
+  animationDurationMs?: number;       // default 300ms
+  style?: React.CSSProperties;        // external positioning + size
 }
 
 interface WarpState {
@@ -21,6 +22,7 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
   onLaunchComplete,
   triggerPortalFlare,
   animationDurationMs = 300,
+  style,
 }) => {
   const [launching, setLaunching] = useState(false);
   const [warp, setWarp] = useState<WarpState | null>(null);
@@ -29,12 +31,6 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
   useEffect(() => {
     if (!launching) return;
 
-    // flare the portal when a launch starts
-    if (triggerPortalFlare) {
-      triggerPortalFlare();
-    }
-
-    // total time: icon anim (~300ms) + a tiny extra delay
     const totalDuration = animationDurationMs + 80;
 
     const timeout = setTimeout(() => {
@@ -44,13 +40,16 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
     }, totalDuration);
 
     return () => clearTimeout(timeout);
-  }, [launching, animationDurationMs, onLaunchComplete, triggerPortalFlare]);
+  }, [launching, animationDurationMs, onLaunchComplete]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (launching) return;
 
-    // Measure icon center in viewport coordinates
+    if (triggerPortalFlare) {
+      triggerPortalFlare();
+    }
+
     const rect = wrapperRef.current?.getBoundingClientRect();
     if (rect) {
       const startX = rect.left + rect.width / 2;
@@ -59,7 +58,7 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
       const endX = window.innerWidth / 2;
       const endY = window.innerHeight / 2;
 
-      // Start warp particle at icon position
+      // start particle at icon
       setWarp({
         x: startX,
         y: startY,
@@ -67,7 +66,7 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
         opacity: 1,
       });
 
-      // Next frame, move particle to the center of the screen
+      // next frame: fly to center
       requestAnimationFrame(() => {
         setWarp({
           x: endX,
@@ -84,7 +83,13 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
   return (
     <>
       {warp && (
-        <div className="launch-warp-particle launch-warp-particle--dynamic launch-warp-particle--dynamic-styles" />
+        <div
+          className="launch-warp-particle"
+          style={{
+            transform: `translate3d(${warp.x}px, ${warp.y}px, 0) scale(${warp.scale})`,
+            opacity: warp.opacity,
+          }}
+        />
       )}
 
       <div
@@ -93,6 +98,7 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
           "launch-icon-wrapper" +
           (launching ? " launch-icon-wrapper--launching" : "")
         }
+        style={style}
         onClick={handleClick}
       >
         <div className="launch-icon-inner">{children}</div>

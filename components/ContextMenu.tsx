@@ -1,8 +1,8 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Image, Settings, Sun, Moon } from 'lucide-react';
-import { nanoid } from 'nanoid';
-import { useKernel } from '../store/kernel';
+import React from "react";
+import { motion } from "framer-motion";
+import { Image, Settings, Sun, Moon } from "lucide-react";
+import { nanoid } from "nanoid";
+import { useKernel } from "../store/kernel";
 
 interface ContextMenuProps {
   x: number;
@@ -11,25 +11,25 @@ interface ContextMenuProps {
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose }) => {
-  const setWallpaper = useKernel(state => state.setWallpaper);
-  const openWindow = useKernel(state => state.openWindow);
-  const theme = useKernel(state => state.theme);
-  const toggleTheme = useKernel(state => state.toggleTheme);
+  const setWallpaper = useKernel((state) => state.setWallpaper);
+  const openWindow = useKernel((state) => state.openWindow);
+  const theme = useKernel((state) => state.theme);
+  const toggleTheme = useKernel((state) => state.toggleTheme);
 
   const changeWallpaper = () => {
     setWallpaper(`https://picsum.photos/seed/${nanoid()}/1920/1080`);
     onClose();
   };
-  
+
   const openSettings = () => {
-    openWindow('settings');
+    openWindow("settings");
     onClose();
-  }
+  };
 
   const handleToggleTheme = () => {
     toggleTheme();
     onClose();
-  }
+  };
 
   return (
     <motion.div
@@ -47,12 +47,12 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose }) => {
         <Image size={16} />
         <span>Next Desktop Background</span>
       </button>
-       <button
+      <button
         onClick={handleToggleTheme}
         className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-[hsl(var(--popover-foreground-hsl))] rounded hover:bg-[hsl(var(--accent-strong-hsl))] hover:text-[hsl(var(--accent-foreground-hsl))]"
       >
-        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+        {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+        <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
       </button>
       <div className="h-px bg-[hsl(var(--border-hsl))] my-1" />
       <button

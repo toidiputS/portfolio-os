@@ -28,6 +28,8 @@ const useKernelStore = create<KernelState>()(
       isMatrixEffectActive: false,
       hasNewMessage: false,
       theme: 'dark',
+      initialGreetingSpoken: false,
+      micPermissionGranted: false,
 
       openWindow: (appId, size = { width: 800, height: 600 }) => {
         const newWindow: WindowInstance = {
@@ -218,6 +220,8 @@ const useKernelStore = create<KernelState>()(
         });
       },
       setHasWelcomed: (status) => set({ hasWelcomed: status }),
+      setInitialGreetingSpoken: (status: boolean) => set({ initialGreetingSpoken: status }),
+      setMicPermissionGranted: (status: boolean) => set({ micPermissionGranted: status }),
       addEmail: (email) => set(state => ({ collectedEmails: [...state.collectedEmails, email] })),
       toggleSidebar: () => set(state => ({ isSidebarOpen: !state.isSidebarOpen, isStartMenuOpen: false })),
       closeSidebar: () => set({ isSidebarOpen: false }),
