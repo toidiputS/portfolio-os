@@ -3,11 +3,14 @@ import React, { useEffect, useRef, useState } from "react";
 import "./PortalLaunchAnimations.css";
 
 interface LaunchIconWrapperProps {
-  children: React.ReactNode;          // your icon (svg etc.)
-  onLaunchComplete: () => void;       // called after animation, open window
-  triggerPortalFlare?: () => void;    // tells portal to flare
-  animationDurationMs?: number;       // default 300ms
-  style?: React.CSSProperties;        // external positioning + size
+  children: React.ReactNode; // your icon (svg etc.)
+  onLaunchComplete: () => void; // called after animation, open window
+  triggerPortalFlare?: () => void; // tells portal to flare
+  animationDurationMs?: number; // default 300ms
+  style?: React.CSSProperties; // external positioning + size
+  className?: string; // additional CSS classes
+  onMouseEnter?: (e: React.MouseEvent) => void;
+  onMouseLeave?: (e: React.MouseEvent) => void;
 }
 
 interface WarpState {
@@ -23,10 +26,14 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
   triggerPortalFlare,
   animationDurationMs = 300,
   style,
+  className,
+  onMouseEnter,
+  onMouseLeave,
 }) => {
   const [launching, setLaunching] = useState(false);
   const [warp, setWarp] = useState<WarpState | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const particleRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!launching) return;
@@ -41,6 +48,29 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
 
     return () => clearTimeout(timeout);
   }, [launching, animationDurationMs, onLaunchComplete]);
+
+  useEffect(() => {
+    if (particleRef.current && warp) {
+      particleRef.current.style.setProperty("--warp-x", `${warp.x}px`);
+      particleRef.current.style.setProperty("--warp-y", `${warp.y}px`);
+      particleRef.current.style.setProperty(
+        "--warp-scale",
+        warp.scale.toString()
+      );
+      particleRef.current.style.setProperty(
+        "--warp-opacity",
+        warp.opacity.toString()
+      );
+    }
+  }, [warp]);
+
+  useEffect(() => {
+    if (wrapperRef.current && style) {
+      Object.entries(style).forEach(([key, value]) => {
+        wrapperRef.current!.style.setProperty(key, value as string);
+      });
+    }
+  }, [style]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -82,24 +112,18 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
 
   return (
     <>
-      {warp && (
-        <div
-          className="launch-warp-particle"
-          style={{
-            transform: `translate3d(${warp.x}px, ${warp.y}px, 0) scale(${warp.scale})`,
-            opacity: warp.opacity,
-          }}
-        />
-      )}
+      {warp && <div ref={particleRef} className="launch-warp-particle" />}
 
       <div
         ref={wrapperRef}
         className={
           "launch-icon-wrapper" +
-          (launching ? " launch-icon-wrapper--launching" : "")
+          (launching ? " launch-icon-wrapper--launching" : "") +
+          (className ? ` ${className}` : "")
         }
-        style={style}
         onClick={handleClick}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
       >
         <div className="launch-icon-inner">{children}</div>
       </div>

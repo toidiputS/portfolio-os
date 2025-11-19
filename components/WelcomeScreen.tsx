@@ -5,6 +5,7 @@ import "./WelcomeScreen.css";
 
 import { APPS } from "../apps.config";
 import { Mic } from "lucide-react";
+import AnimatedGenerateButton from "./animated-generate-button-shadcn-tailwind";
 
 // Dynamically import all audio files from assets/audio/
 const audioModules = import.meta.glob("../assets/audio/*.mp3", { eager: true });
@@ -22,6 +23,7 @@ const WelcomeScreen: React.FC = () => {
     (state) => state.setMicPermissionGranted
   );
 
+  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [showMicPermission, setShowMicPermission] = useState(false);
@@ -73,6 +75,10 @@ const WelcomeScreen: React.FC = () => {
 
   const onFadeOutComplete = () => {
     proceedWithWelcome();
+  };
+
+  const handleFirstNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFirstName(e.target.value);
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,10 +152,19 @@ const WelcomeScreen: React.FC = () => {
           transition={{ duration: 0.5 }}
           className="flex justify-center mb-4"
         >
-          <h1 className="text-4xl font-bold text-white">PortfolioOS</h1>
+          <h1 className="text-4xl font-bold text-white">The Youniverse</h1>
         </motion.div>
 
         <div className="space-y-4 w-full">
+          <div>
+            <input
+              type="text"
+              value={firstName}
+              onChange={handleFirstNameChange}
+              placeholder="First Name"
+              className="w-full px-4 py-2 bg-black/50 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder:text-zinc-400"
+            />
+          </div>
           <div>
             <input
               type="email"
@@ -160,14 +175,11 @@ const WelcomeScreen: React.FC = () => {
             />
           </div>
           <div className="relative">
-            <motion.button
+            <AnimatedGenerateButton
+              labelIdle="Enter the OS"
               onClick={handleContinue}
-              className={`w-full px-6 py-2 rounded-md transition-colors font-semibold text-white bg-blue-600 hover:bg-blue-500`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Enter the OS
-            </motion.button>
+              className="w-full"
+            />
 
             {showMicPermission && (
               <motion.div

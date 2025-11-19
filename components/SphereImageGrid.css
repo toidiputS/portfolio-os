@@ -1,149 +1,103 @@
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
+/* components/SphereImageGrid.css */
 
 .sphere-image-grid {
-  -webkit-user-select: none;
-  user-select: none;
-  cursor: grab;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) translateZ(0);
-  width: var(--container-size);
-  height: var(--container-size);
-  perspective: var(--perspective);
-}
 
-.sphere-image-grid-container {
+  /* Use CSS custom property for dynamic container size */
+  width: var(--sig-container-size, 350px);
+  height: var(--sig-container-size, 350px);
+
+  pointer-events: auto;
+  cursor: grab;
   -webkit-user-select: none;
   user-select: none;
-  cursor: grab;
-  position: relative;
 }
 
-.sphere-image-grid-container.grabbing {
+.sphere-image-grid:active {
   cursor: grabbing;
 }
 
-.sphere-image-grid-inner {
-  position: relative;
+.launch-icon-wrapper {
+  position: absolute;
+  left: var(--left);
+  top: var(--top);
+  width: var(--size);
+  height: var(--size);
+  cursor: pointer;
+}
+
+.launch-icon-inner {
   width: 100%;
   height: 100%;
-  z-index: 10;
-}
-
-.sphere-app-node {
-  position: absolute;
-  cursor: pointer;
-  -webkit-user-select: none;
-  user-select: none;
-  transition: transform 0.2s ease-out;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  width: var(--node-width);
-  height: var(--node-height);
-  opacity: var(--node-opacity);
-  transform: var(--node-transform);
-  z-index: var(--node-z-index);
-}
-
-.sphere-app-icon-container {
-  position: relative;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: hsl(var(--secondary-hsl));
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border-width: 2px;
-  border-color: hsl(var(--border-hsl));
-  padding: 0.5rem;
-  width: var(--icon-size);
-  height: var(--icon-size);
 }
 
 .sphere-app-icon {
-  width: 100%;
-  height: 100%;
-  color: hsl(var(--foreground-hsl));
+  .sphere-image-grid svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Warp particle from LaunchIconWrapper.css (already in PortalLaunchAnimations)
+   will sit on top of this. */
+}
+/* ============================================
+   EXTRACTED FROM INLINE STYLES
+   ============================================ */
+
+/* Loading container */
+.sig-loading-container {
+  width: var(--sig-container-size);
+  height: var(--sig-container-size);
+  background-color: #f3f4f6; /* gray-100 */
+  border-radius: 0.2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
-.sphere-app-name {
-  color: hsl(var(--foreground-hsl));
-  font-size: 0.75rem;
-  line-height: 1rem;
-  font-weight: 500;
-  text-align: center;
-  text-shadow: 1px 1px 3px hsl(var(--background-hsl));
-  white-space: nowrap;
-  transform: var(--name-transform);
-}
-
-.sphere-loader-container,
-.sphere-no-apps-container {
+/* Empty apps container */
+.sig-empty-container {
+  width: var(--sig-container-size);
+  height: var(--sig-container-size);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
-.sphere-loader-container {
-  background-color: #f3f4f6;
-  border-radius: 0.5rem;
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.sphere-loader-text,
-.sphere-no-apps-text {
-  color: #9ca3af;
-}
-
-.sphere-no-apps-container {
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-  border-width: 2px;
-  border-style: dashed;
-  border-color: #d1d5db;
-}
-
-.sphere-no-apps-text {
-  text-align: center;
-}
-
-.sphere-no-apps-subtext {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-}
-
-.sphere-app-node-wrapper {
+/* The sphere root MUST stay centered. Don’t override. */
+/* Sphere root container (replaces inline) */
+.sig-root-container {
+  width: var(--sig-container-size);
+  height: var(--sig-container-size);
+  perspective: var(--sig-perspective);
   position: absolute;
-  cursor: pointer;
-  left: var(--left);
-  top: var(--top);
-  z-index: var(--z-index);
-  opacity: var(--opacity);
-  transform: translateZ(var(--transform-z));
-  width: var(--width);
-  height: var(--height);
+  top: 41%;
+  left: 45%;
+  transform: translate(70%, 70%);
+  pointer-events: auto;
+}
+
+/* Inner wrapper (replaces inline z-index) */
+.sig-inner-wrapper {
+  position: relative;
+  width: 50%;
+  height: 50%;
+  z-index: 10;
+  transform-style: preserve-3d;
+}
+
+/* Pulse animation used by loading state */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
 }
