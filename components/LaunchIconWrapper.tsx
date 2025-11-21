@@ -1,14 +1,15 @@
-// components/LaunchIconWrapper.tsx
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import "./PortalLaunchAnimations.css";
 
 interface LaunchIconWrapperProps {
-  children: React.ReactNode; // your icon (svg etc.)
-  onLaunchComplete: () => void; // called after animation, open window
-  triggerPortalFlare?: () => void; // tells portal to flare
+  children: React.ReactNode; // icon svg
+  onLaunchComplete: () => void; // call after animation finishes
+  triggerPortalFlare?: () => void; // portal flare trigger
   animationDurationMs?: number; // default 300ms
-  style?: React.CSSProperties; // external positioning + size
-  className?: string; // additional CSS classes
+  style?: React.CSSProperties; // positioning + size from parent
+  warpTarget?: { x: number; y: number }; // ← portal/sphere center
+  className?: string; // extra classes
   onMouseEnter?: (e: React.MouseEvent) => void;
   onMouseLeave?: (e: React.MouseEvent) => void;
 }
@@ -29,26 +30,41 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
   className,
   onMouseEnter,
   onMouseLeave,
+  warpTarget,
 }) => {
   const [launching, setLaunching] = useState(false);
   const [warp, setWarp] = useState<WarpState | null>(null);
+
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const particleRef = useRef<HTMLDivElement | null>(null);
+  const onLaunchCompleteRef = useRef(onLaunchComplete);
 
+  useEffect(() => {
+    onLaunchCompleteRef.current = onLaunchComplete;
+  }, [onLaunchComplete]);
+
+  //
+  // 🔥 Finish animation
+  //
   useEffect(() => {
     if (!launching) return;
 
     const totalDuration = animationDurationMs + 80;
 
     const timeout = setTimeout(() => {
-      onLaunchComplete();
+      onLaunchCompleteRef.current();
       setLaunching(false);
       setWarp(null);
     }, totalDuration);
 
-    return () => clearTimeout(timeout);
-  }, [launching, animationDurationMs, onLaunchComplete]);
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [launching, animationDurationMs]);
 
+  //
+  // 🔥 Sync warp FX to CSS custom properties
+  //
   useEffect(() => {
     if (particleRef.current && warp) {
       particleRef.current.style.setProperty("--warp-x", `${warp.x}px`);
@@ -64,31 +80,36 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
     }
   }, [warp]);
 
+  //
+  // 🔥 Apply external inline positioning (size/XY) from SphereImageGrid
+  //
   useEffect(() => {
     if (wrapperRef.current && style) {
-      Object.entries(style).forEach(([key, value]) => {
-        wrapperRef.current!.style.setProperty(key, value as string);
-      });
+      for (const [key, val] of Object.entries(style)) {
+        wrapperRef.current.style.setProperty(key, val as string);
+      }
     }
   }, [style]);
 
+  //
+  // 🔥 Icon click → warp to portal center
+  //
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (launching) return;
 
-    if (triggerPortalFlare) {
-      triggerPortalFlare();
-    }
+    if (triggerPortalFlare) triggerPortalFlare();
 
     const rect = wrapperRef.current?.getBoundingClientRect();
     if (rect) {
       const startX = rect.left + rect.width / 2;
       const startY = rect.top + rect.height / 2;
 
-      const endX = window.innerWidth / 2;
-      const endY = window.innerHeight / 2;
+      // Use real portal center if provided
+      const endX = warpTarget?.x ?? window.innerWidth / 2;
+      const endY = warpTarget?.y ?? window.innerHeight / 2;
 
-      // start particle at icon
+      // start particle at the icon
       setWarp({
         x: startX,
         y: startY,
@@ -96,7 +117,7 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
         opacity: 1,
       });
 
-      // next frame: fly to center
+      // next frame → animate to portal center
       requestAnimationFrame(() => {
         setWarp({
           x: endX,
@@ -112,7 +133,12 @@ export const LaunchIconWrapper: React.FC<LaunchIconWrapperProps> = ({
 
   return (
     <>
-      {warp && <div ref={particleRef} className="launch-warp-particle" />}
+      {/* particle that shoots into the portal */}
+      {warp &&
+        createPortal(
+          <div ref={particleRef} className="launch-warp-particle" />,
+          document.body
+        )}
 
       <div
         ref={wrapperRef}

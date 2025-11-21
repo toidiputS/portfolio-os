@@ -1,36 +1,46 @@
 .wallpaper {
-    background-image: var(--wallpaper-url);
+  background-image: var(--wallpaper-url);
+  background-size: cover;
+  background-position: center;
+  transition: opacity 1.2s ease-in-out, filter 1s ease-in-out;
+  opacity: 1;
+  filter: brightness(1.15) saturate(1.2);
+}
+
+.wallpaper.fade-out {
+  opacity: 0;
 }
 
 .wallpaper.matrix-effect {
-    filter: blur(8px);
+  filter: blur(8px);
 }
 
 .dark {
-    --accent-color-rgb: 0,255,255;
+  --accent-color-rgb: 0, 255, 255;
 }
 
 .light {
-    --accent-color-rgb: 59, 130, 246;
+  --accent-color-rgb: 59, 130, 246;
 }
 
 .ai-indicator.loading {
-    animation: pulse 2s infinite;
-    box-shadow: 0 0 20px 5px rgba(var(--accent-color-rgb),0.7);
+  animation: pulse 2s infinite;
+  box-shadow: 0 0 20px 5px rgba(var(--accent-color-rgb), 0.7);
 }
 
 @keyframes pulse {
-    0%, 100% { 
-        transform: scale(1); 
-        box-shadow: 0 0 20px 5px rgba(var(--accent-color-rgb), 0.7); 
-    }
-    50% { 
-        transform: scale(1.1); 
-        box-shadow: 0 0 30px 10px rgba(var(--accent-color-rgb), 0.7); 
-    }
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px 5px rgba(var(--accent-color-rgb), 0.7);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 30px 10px rgba(var(--accent-color-rgb), 0.7);
+  }
 }
 
 .taskbar-blur {
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
 }

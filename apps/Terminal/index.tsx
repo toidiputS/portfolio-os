@@ -60,8 +60,8 @@ const Terminal: React.FC = () => {
             case 'emails':
                 if (collectedEmails.length > 0) {
                     cmdOutput = [
-                        { type: 'output', text: 'Collected Emails:'},
-                        ...collectedEmails.map(email => ({ type: 'output', text: `- ${email}` }))
+                        { type: 'output', text: 'Collected Emails:' },
+                        ...collectedEmails.map(email => ({ type: 'output' as const, text: `- ${email}` }))
                     ];
                 } else {
                     cmdOutput = [{ type: 'output', text: 'No emails collected yet.' }];
@@ -97,16 +97,16 @@ const Terminal: React.FC = () => {
     }, [output]);
 
     return (
-        <div 
+        <div
             className="h-full w-full bg-black text-white font-mono p-2 text-sm overflow-y-auto"
             onClick={() => inputRef.current?.focus()}
         >
             {output.map((line, index) => (
                 <div key={index} className={
-                    line.type === 'error' ? 'text-red-500' : 
-                    line.type === 'input' ? 'text-green-400' : ''
+                    line.type === 'error' ? 'text-red-500' :
+                        line.type === 'input' ? 'text-green-400' : ''
                 }>
-                   <pre>{line.text}</pre>
+                    <pre>{line.text}</pre>
                 </div>
             ))}
             <form onSubmit={handleSubmit} className="flex">
@@ -116,7 +116,7 @@ const Terminal: React.FC = () => {
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    className="flex-grow bg-transparent border-none outline-none pl-2"
+                    className="grow bg-transparent border-none outline-none pl-2"
                     autoFocus
                 />
             </form>

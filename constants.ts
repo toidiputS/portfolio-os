@@ -1,0 +1,17 @@
+export const PORTAL_BACKGROUNDS = [
+    "/assets/images/portals/portal-1.jpg",
+    "/assets/images/portals/portal-2.jpg",
+    "/assets/images/portals/portal-3.jpg",
+    "/assets/images/portals/portal-4.jpg",
+    "/assets/images/portals/portal-5.jpg",
+    "/assets/images/portals/portal-6.jpg",
+    "/assets/images/portals/portal-7.jpg",
+    "/assets/images/portals/portal-8.jpg",
+    "/assets/images/portals/portal-9.jpg",
+    "/assets/images/portals/portal-10.jpg",
+    "/assets/images/portals/portal-11.jpg",
+    "/assets/images/portals/portal-12.jpg",
+    "/assets/images/portals/portal-13.jpg",
+    "/assets/images/portals/portal-14.jpg",
+    "/assets/images/portals/portal-15.jpg",
+];

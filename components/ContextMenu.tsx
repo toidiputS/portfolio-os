@@ -8,16 +8,19 @@ interface ContextMenuProps {
   x: number;
   y: number;
   onClose: () => void;
+  onNextWallpaper?: () => void;
 }
 
-const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose }) => {
+const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose, onNextWallpaper }) => {
   const setWallpaper = useKernel((state) => state.setWallpaper);
   const openWindow = useKernel((state) => state.openWindow);
   const theme = useKernel((state) => state.theme);
   const toggleTheme = useKernel((state) => state.toggleTheme);
 
   const changeWallpaper = () => {
-    setWallpaper(`https://picsum.photos/seed/${nanoid()}/1920/1080`);
+    if (onNextWallpaper) {
+      onNextWallpaper();
+    }
     onClose();
   };
 

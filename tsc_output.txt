@@ -1,0 +1,8 @@
+﻿apps/GeminiChat/index.tsx(149,47): error TS18048: 'chunk.web' is possibly 'undefined'.
+apps/GeminiChat/index.tsx(153,48): error TS18048: 'chunk.web' is possibly 'undefined'.
+apps/GeminiChat/index.tsx(155,42): error TS18048: 'chunk.web' is possibly 'undefined'.
+apps/GeminiChat/index.tsx(155,61): error TS18048: 'chunk.web' is possibly 'undefined'.
+apps/Terminal/index.tsx(64,25): error TS2322: Type '{ type: string; text: string; }' is not assignable to type 'OutputLine'.
+  Types of property 'type' are incompatible.
+    Type 'string' is not assignable to type '"input" | "output" | "error"'.
+components/Greeter.tsx(2,27): error TS2307: Cannot find module '../lib/audioUtils' or its corresponding type declarations.

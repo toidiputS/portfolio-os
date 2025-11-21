@@ -17,7 +17,7 @@ const GeminiChat: React.FC = () => {
   const deleteChatSession = useKernel(state => state.deleteChatSession);
   const updateSessionTitle = useKernel(state => state.updateSessionTitle);
   const openWindow = useKernel(state => state.openWindow);
-  
+
   const [input, setInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -29,7 +29,7 @@ const GeminiChat: React.FC = () => {
 
   const handleSend = async () => {
     if (!input.trim() || !currentSession) return;
-    
+
     const isNewChat = currentSession.messages.length === 0;
 
     setGeminiLoading(true);
@@ -42,14 +42,14 @@ const GeminiChat: React.FC = () => {
     let finalPrompt = userInput;
     // Note: With the new proxy, history is sent but context summarization happens on the client
     const historyForAPI: ChatMessage[] = gemini.useSmartContext && currentSession.messages.length > 1
-        ? [{ role: 'user', content: await summarizeHistory(currentSession.messages) }, userMessage]
-        : [...currentSession.messages, userMessage];
+      ? [{ role: 'user', content: await summarizeHistory(currentSession.messages) }, userMessage]
+      : [...currentSession.messages, userMessage];
 
 
     const { text: responseText, groundingChunks, functionCalls } = await generateResponse(userInput, gemini.model, historyForAPI, gemini.useGrounding);
 
     let modelMessage: ChatMessage | null = null;
-    
+
     if (functionCalls && functionCalls.length > 0) {
       for (const fc of functionCalls) {
         if (fc.name === 'openWindow') {
@@ -57,12 +57,12 @@ const GeminiChat: React.FC = () => {
           if (appId && APPS.some(app => app.id === appId)) {
             openWindow(appId as AppId);
           } else {
-             addMessageToSession(currentSession.id, { role: 'model', content: `Sorry, I can't find an application called "${appId}".` });
+            addMessageToSession(currentSession.id, { role: 'model', content: `Sorry, I can't find an application called "${appId}".` });
           }
         }
       }
     }
-    
+
     if (responseText) {
       modelMessage = { role: 'model', content: responseText, groundingChunks };
       addMessageToSession(currentSession.id, modelMessage);
@@ -71,15 +71,15 @@ const GeminiChat: React.FC = () => {
       modelMessage = { role: 'model', content: `Understood. Executing action: ${calledFunctions}.` };
       addMessageToSession(currentSession.id, modelMessage);
     }
-    
+
     if (isNewChat && modelMessage) {
-        const newTitle = await generateTitleForSession([userMessage, modelMessage]);
-        updateSessionTitle(currentSession.id, newTitle);
+      const newTitle = await generateTitleForSession([userMessage, modelMessage]);
+      updateSessionTitle(currentSession.id, newTitle);
     }
-    
+
     setGeminiLoading(false);
   };
-  
+
   const sortedSessions = useMemo(() => {
     return Object.values(gemini.sessions).sort((a: ChatSession, b: ChatSession) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [gemini.sessions]);
@@ -94,12 +94,11 @@ const GeminiChat: React.FC = () => {
         <div className="grow overflow-y-auto pr-1">
           {sortedSessions.map((session: ChatSession) => (
             <div key={session.id} onClick={() => selectChatSession(session.id)}
-              className={`flex justify-between items-center p-2 mb-1 text-sm rounded-md cursor-pointer transition-colors ${
-                gemini.currentSessionId === session.id ? 'bg-[hsl(var(--muted-hsl))]' : 'hover:bg-[hsl(var(--secondary-hsl))]'
-              }`}>
+              className={`flex justify-between items-center p-2 mb-1 text-sm rounded-md cursor-pointer transition-colors ${gemini.currentSessionId === session.id ? 'bg-[hsl(var(--muted-hsl))]' : 'hover:bg-[hsl(var(--secondary-hsl))]'
+                }`}>
               <span className="truncate grow mr-2">{session.title}</span>
               <button type="button" title="Delete chat session" onClick={(e) => { e.stopPropagation(); deleteChatSession(session.id); }} className="p-1 text-[hsl(var(--muted-foreground-hsl))] hover:text-[hsl(var(--destructive-hsl))] opacity-50 hover:opacity-100 shrink-0">
-                  <Trash2 size={14}/>
+                <Trash2 size={14} />
               </button>
             </div>
           ))}
@@ -112,12 +111,12 @@ const GeminiChat: React.FC = () => {
           <h2 className="text-lg font-semibold">{currentSession?.title || 'Gemini Chat'}</h2>
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2 text-sm cursor-pointer" title="Use Google Search for up-to-date info">
-              <Globe size={16} className={gemini.useGrounding ? 'text-[hsl(var(--accent-hsl))]' : 'text-[hsl(var(--muted-foreground-hsl))]'}/>
+              <Globe size={16} className={gemini.useGrounding ? 'text-[hsl(var(--accent-hsl))]' : 'text-[hsl(var(--muted-foreground-hsl))]'} />
               <span className={gemini.useGrounding ? '' : 'text-[hsl(var(--muted-foreground-hsl))]'}>Search</span>
               <input type="checkbox" checked={gemini.useGrounding} onChange={toggleGrounding} className="sr-only" />
             </label>
             <label className="flex items-center gap-2 text-sm cursor-pointer" title="Summarize conversation for context">
-              <BrainCircuit size={16} className={gemini.useSmartContext ? 'text-[hsl(var(--accent-hsl))]' : 'text-[hsl(var(--muted-foreground-hsl))]'}/>
+              <BrainCircuit size={16} className={gemini.useSmartContext ? 'text-[hsl(var(--accent-hsl))]' : 'text-[hsl(var(--muted-foreground-hsl))]'} />
               <span className={gemini.useSmartContext ? '' : 'text-[hsl(var(--muted-foreground-hsl))]'}>Context</span>
               <input type="checkbox" checked={gemini.useSmartContext} onChange={toggleSmartContext} className="sr-only" />
             </label>
@@ -140,36 +139,38 @@ const GeminiChat: React.FC = () => {
               <div className={`max-w-xl p-3 rounded-lg ${msg.role === 'user' ? 'bg-[hsl(var(--accent-strong-hsl))] text-[hsl(var(--accent-foreground-hsl))]' : 'bg-[hsl(var(--secondary-hsl))]'}`}>
                 <p className="whitespace-pre-wrap">{msg.content}</p>
                 {msg.groundingChunks && msg.groundingChunks.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-[hsl(var(--border-hsl))]">
-                        <h4 className="text-xs font-semibold text-[hsl(var(--muted-foreground-hsl))] mb-1">Sources:</h4>
-                        <ol className="list-decimal list-inside text-xs space-y-1">
-                            {msg.groundingChunks.map((chunk, i) => (
-                                <li key={i}>
-                                    <a 
-                                        href={chunk.web.uri} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-[hsl(var(--accent-hsl))] hover:underline truncate"
-                                        title={chunk.web.uri}
-                                    >
-                                        {chunk.web.title || chunk.web.uri}
-                                    </a>
-                                </li>
-                            ))}
-                        </ol>
-                    </div>
+                  <div className="mt-3 pt-3 border-t border-[hsl(var(--border-hsl))]">
+                    <h4 className="text-xs font-semibold text-[hsl(var(--muted-foreground-hsl))] mb-1">Sources:</h4>
+                    <ol className="list-decimal list-inside text-xs space-y-1">
+                      {msg.groundingChunks.map((chunk, i) => (
+                        chunk.web ? (
+                          <li key={i}>
+                            <a
+                              href={chunk.web.uri}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[hsl(var(--accent-hsl))] hover:underline truncate"
+                              title={chunk.web.uri}
+                            >
+                              {chunk.web.title || chunk.web.uri}
+                            </a>
+                          </li>
+                        ) : null
+                      ))}
+                    </ol>
+                  </div>
                 )}
               </div>
               {msg.role === 'user' && <User className="w-6 h-6 shrink-0" />}
             </div>
           ))}
           {gemini.isLoading && (
-             <div className="flex items-start gap-3">
-                <Bot className="w-6 h-6 shrink-0 text-[hsl(var(--accent-hsl))]"/>
-                <div className="max-w-xl p-3 rounded-lg bg-[hsl(var(--secondary-hsl))] animate-pulse">
-                  <div className="h-4 bg-[hsl(var(--muted-hsl))] rounded w-24"></div>
-                </div>
+            <div className="flex items-start gap-3">
+              <Bot className="w-6 h-6 shrink-0 text-[hsl(var(--accent-hsl))]" />
+              <div className="max-w-xl p-3 rounded-lg bg-[hsl(var(--secondary-hsl))] animate-pulse">
+                <div className="h-4 bg-[hsl(var(--muted-hsl))] rounded w-24"></div>
               </div>
+            </div>
           )}
           <div ref={chatEndRef} />
         </div>

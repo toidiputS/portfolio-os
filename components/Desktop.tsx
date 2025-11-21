@@ -6,7 +6,9 @@ import ContextMenu from "./ContextMenu";
 import MatrixRain from "./MatrixRain";
 
 import Taskbar from "./Taskbar";
+import StartMenu from "./StartMenu";
 import { APPS } from "../apps.config";
+import { PORTAL_BACKGROUNDS } from "../constants";
 
 interface ContextMenuState {
   visible: boolean;
@@ -16,6 +18,7 @@ interface ContextMenuState {
 
 const Desktop: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const wallpaper = useKernel((state) => state.wallpaper);
+  const setWallpaper = useKernel((state) => state.setWallpaper);
   const openWindow = useKernel((state) => state.openWindow);
   const closeStartMenu = useKernel((state) => state.closeStartMenu);
   const gemini = useKernel((state) => state.gemini);
@@ -29,16 +32,50 @@ const Desktop: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     x: 0,
     y: 0,
   });
+
+  // Initialize bgIndex based on current wallpaper in store, or default to 0
+  const [bgIndex, setBgIndex] = useState(() => {
+    const index = PORTAL_BACKGROUNDS.indexOf(wallpaper);
+    return index >= 0 ? index : 0;
+  });
   const wallpaperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (wallpaperRef.current) {
-      wallpaperRef.current.style.setProperty(
-        "--wallpaper-url",
-        `url(${wallpaper})`
-      );
-    }
-  }, [wallpaper]);
+    if (!wallpaperRef.current) return;
+
+    wallpaperRef.current.classList.add("fade-out");
+
+    const timeout = setTimeout(() => {
+      if (wallpaperRef.current) {
+        // Update the CSS variable for the transition
+        wallpaperRef.current.style.setProperty(
+          "--wallpaper-url",
+          `url(${PORTAL_BACKGROUNDS[bgIndex]})`
+        );
+        wallpaperRef.current.classList.remove("fade-out");
+
+        // Sync with global store
+        if (wallpaper !== PORTAL_BACKGROUNDS[bgIndex]) {
+          setWallpaper(PORTAL_BACKGROUNDS[bgIndex]);
+        }
+      }
+    }, 600);
+
+    return () => clearTimeout(timeout);
+  }, [bgIndex, setWallpaper, wallpaper]);
+
+  // Auto-cycle background every 8 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBgIndex((prev) => (prev + 1) % PORTAL_BACKGROUNDS.length);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const nextWallpaper = () => {
+    setBgIndex((prev) => (prev + 1) % PORTAL_BACKGROUNDS.length);
+  };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -86,9 +123,8 @@ const Desktop: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {isMatrixEffectActive && <MatrixRain />}
       <div
         ref={wallpaperRef}
-        className={`wallpaper absolute inset-5 bg-cover bg-center transition-transform duration-300 ease-out ${
-          isMatrixEffectActive ? "matrix-effect" : ""
-        }`}
+        className={`wallpaper absolute inset-5 bg-cover bg-center transition-transform duration-300 ease-out ${isMatrixEffectActive ? "matrix-effect" : ""
+          }`}
       />
 
       <div className="absolute inset-0">
@@ -108,18 +144,19 @@ const Desktop: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           x={contextMenu.x}
           y={contextMenu.y}
           onClose={() => setContextMenu({ ...contextMenu, visible: false })}
+          onNextWallpaper={nextWallpaper}
         />
       )}
 
       {/* AI Presence Indicator */}
       <div
-        className={`ai-indicator fixed top-4 right-4 h-6 w-6 rounded-full bg-[hsl(var(--accent-hsl))] transition-all duration-500 ease-in-out z-30 ${
-          gemini.isLoading
-            ? "opacity-100 scale-100 loading"
-            : "opacity-0 scale-0"
-        }`}
+        className={`ai-indicator fixed top-4 right-4 h-6 w-6 rounded-full bg-[hsl(var(--accent-hsl))] transition-all duration-500 ease-in-out z-30 ${gemini.isLoading
+          ? "opacity-100 scale-100 loading"
+          : "opacity-0 scale-0"
+          }`}
       />
 
+      <StartMenu />
       <Taskbar />
     </main>
   );

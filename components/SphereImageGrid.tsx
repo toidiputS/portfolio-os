@@ -536,6 +536,16 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
 
   const worldPositions = calculateWorldPositions();
 
+  // Compute the *actual* center of the sphere container in screen coords
+  const getPortalCenter = useCallback(() => {
+    // Always warp to the center of the screen (portal center)
+    return {
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    };
+  }, []);
+
+  const portalCenter = getPortalCenter();
   const renderIconNode = useCallback(
     (app: AppDefinition, index: number) => {
       const position = worldPositions[index];
@@ -552,6 +562,7 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
         <LaunchIconWrapper
           key={app.id}
           onLaunchComplete={() => onAppClick?.(app.id as AppId)}
+          warpTarget={portalCenter}
           style={{
             position: "absolute",
             width: `${imageSize}px`,
@@ -577,6 +588,7 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
       hoveredIndex,
       hoverScale,
       onAppClick,
+      portalCenter,
     ]
   );
 
@@ -625,4 +637,4 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
   );
 };
 
-export default SphereImageGrid;
+export default React.memo(SphereImageGrid);
