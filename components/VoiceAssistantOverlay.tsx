@@ -3,6 +3,7 @@ import { Mic, Volume2, MicOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { startPushToTalk } from './VoiceConversation';
 import { useKernel } from '../store/kernel';
+import { GlowCard } from './GlowCard';
 
 interface SpeechBubble {
     id: string;
@@ -82,8 +83,8 @@ const VoiceAssistantOverlay: React.FC = () => {
 
     return (
         <div className="fixed bottom-4 right-4 z-9999 pointer-events-none">
-            {/* Speech Bubbles */}
-            <div className="flex flex-col items-end gap-2 mb-4 max-w-[300px]">
+            {/* Speech Bubbles with Glow Effect */}
+            <div className="flex flex-col items-end gap-3 mb-4 max-w-[350px]">
                 <AnimatePresence>
                     {bubbles.map((bubble, index) => (
                         <motion.div
@@ -92,10 +93,15 @@ const VoiceAssistantOverlay: React.FC = () => {
                             animate={{ opacity: 1, x: 0, y: 0 }}
                             exit={{ opacity: 0, x: 50, scale: 0.8 }}
                             transition={{ duration: 0.3, delay: index * 0.1 }}
-                            className="bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-lg shadow-lg border border-white/10 text-sm pointer-events-auto"
-                            style={{ maxWidth: '300px' }}
+                            className="pointer-events-auto w-full"
                         >
-                            <p className="leading-relaxed">{bubble.text}</p>
+                            <GlowCard
+                                glowColor="purple"
+                                customSize={true}
+                                className="w-full p-3 !aspect-auto !grid-rows-1"
+                            >
+                                <p className="text-white text-sm leading-relaxed m-0">{bubble.text}</p>
+                            </GlowCard>
                         </motion.div>
                     ))}
                 </AnimatePresence>
