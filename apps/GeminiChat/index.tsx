@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useKernel } from '../../store/kernel';
 import { ChatMessage, GeminiModel, ChatSession, AppId } from '../../types';
-import { Send, Plus, Trash2, BrainCircuit, Bot, User, Globe } from 'lucide-react';
+import { Send, Plus, Trash2, BrainCircuit, Bot, User, Globe, Sparkles, Terminal as TerminalIcon } from 'lucide-react';
 import { generateResponse, summarizeHistory, generateTitleForSession } from '../../services/geminiService';
 import { APPS } from '../../apps.config';
+import ReactMarkdown from 'react-markdown';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const GeminiChat: React.FC = () => {
   const gemini = useKernel(state => state.gemini);
@@ -17,6 +19,7 @@ const GeminiChat: React.FC = () => {
   const deleteChatSession = useKernel(state => state.deleteChatSession);
   const updateSessionTitle = useKernel(state => state.updateSessionTitle);
   const openWindow = useKernel(state => state.openWindow);
+  const openFile = useKernel(state => state.openFile);
 
   const [input, setInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -25,7 +28,7 @@ const GeminiChat: React.FC = () => {
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [currentSession?.messages]);
+  }, [currentSession?.messages, gemini.isLoading]);
 
   const handleSend = async () => {
     if (!input.trim() || !currentSession) return;
@@ -39,12 +42,9 @@ const GeminiChat: React.FC = () => {
     const userMessage: ChatMessage = { role: 'user', content: userInput };
     addMessageToSession(currentSession.id, userMessage);
 
-    let finalPrompt = userInput;
-    // Note: With the new proxy, history is sent but context summarization happens on the client
     const historyForAPI: ChatMessage[] = gemini.useSmartContext && currentSession.messages.length > 1
       ? [{ role: 'user', content: await summarizeHistory(currentSession.messages) }, userMessage]
       : [...currentSession.messages, userMessage];
-
 
     const { text: responseText, groundingChunks, functionCalls } = await generateResponse(userInput, gemini.model, historyForAPI, gemini.useGrounding);
 
@@ -58,6 +58,11 @@ const GeminiChat: React.FC = () => {
             openWindow(appId as AppId);
           } else {
             addMessageToSession(currentSession.id, { role: 'model', content: `Sorry, I can't find an application called "${appId}".` });
+          }
+        } else if (fc.name === 'openFile') {
+          const { fileId } = fc.args;
+          if (fileId) {
+            openFile(fileId);
           }
         }
       }
@@ -85,19 +90,21 @@ const GeminiChat: React.FC = () => {
   }, [gemini.sessions]);
 
   return (
-    <div className="flex h-full bg-[hsl(var(--card-hsl))] text-[hsl(var(--card-foreground-hsl))]">
+    <div className="flex h-full bg-[hsl(var(--card-hsl))] text-[hsl(var(--card-foreground-hsl))] font-sans">
       {/* Sidebar */}
-      <aside className="w-64 bg-[hsl(var(--background-hsl))] p-2 flex flex-col">
-        <button onClick={startNewChat} className="flex items-center justify-center gap-2 w-full p-2 mb-4 text-sm bg-[hsl(var(--accent-strong-hsl))] text-[hsl(var(--accent-foreground-hsl))] hover:brightness-90 rounded-md transition-all">
-          <Plus size={16} /> New Chat
-        </button>
-        <div className="grow overflow-y-auto pr-1">
+      <aside className="w-64 bg-[hsl(var(--background-hsl))] border-r border-[hsl(var(--border-hsl))] flex flex-col">
+        <div className="p-4 border-b border-[hsl(var(--border-hsl))]">
+          <button onClick={startNewChat} className="flex items-center justify-center gap-2 w-full py-2.5 px-4 text-sm font-medium bg-[hsl(var(--primary-hsl))] text-[hsl(var(--primary-foreground-hsl))] hover:brightness-110 rounded-lg transition-all shadow-sm">
+            <Plus size={16} /> New Chat
+          </button>
+        </div>
+        <div className="grow overflow-y-auto p-2 space-y-1">
           {sortedSessions.map((session: ChatSession) => (
             <div key={session.id} onClick={() => selectChatSession(session.id)}
-              className={`flex justify-between items-center p-2 mb-1 text-sm rounded-md cursor-pointer transition-colors ${gemini.currentSessionId === session.id ? 'bg-[hsl(var(--muted-hsl))]' : 'hover:bg-[hsl(var(--secondary-hsl))]'
+              className={`group flex justify-between items-center p-2.5 text-sm rounded-lg cursor-pointer transition-all ${gemini.currentSessionId === session.id ? 'bg-[hsl(var(--accent-hsl))/0.1] text-[hsl(var(--accent-hsl))] font-medium' : 'hover:bg-[hsl(var(--secondary-hsl))] text-[hsl(var(--muted-foreground-hsl))] hover:text-[hsl(var(--foreground-hsl))]'
                 }`}>
               <span className="truncate grow mr-2">{session.title}</span>
-              <button type="button" title="Delete chat session" onClick={(e) => { e.stopPropagation(); deleteChatSession(session.id); }} className="p-1 text-[hsl(var(--muted-foreground-hsl))] hover:text-[hsl(var(--destructive-hsl))] opacity-50 hover:opacity-100 shrink-0">
+              <button type="button" title="Delete chat session" onClick={(e) => { e.stopPropagation(); deleteChatSession(session.id); }} className="p-1.5 rounded-md text-[hsl(var(--muted-foreground-hsl))] hover:bg-[hsl(var(--destructive-hsl))/0.1] hover:text-[hsl(var(--destructive-hsl))] opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                 <Trash2 size={14} />
               </button>
             </div>
@@ -106,83 +113,173 @@ const GeminiChat: React.FC = () => {
       </aside>
 
       {/* Main Chat Area */}
-      <main className="flex-1 flex flex-col">
-        <header className="flex items-center justify-between p-2 border-b border-[hsl(var(--border-hsl))]">
-          <h2 className="text-lg font-semibold">{currentSession?.title || 'Gemini Chat'}</h2>
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-sm cursor-pointer" title="Use Google Search for up-to-date info">
-              <Globe size={16} className={gemini.useGrounding ? 'text-[hsl(var(--accent-hsl))]' : 'text-[hsl(var(--muted-foreground-hsl))]'} />
-              <span className={gemini.useGrounding ? '' : 'text-[hsl(var(--muted-foreground-hsl))]'}>Search</span>
-              <input type="checkbox" checked={gemini.useGrounding} onChange={toggleGrounding} className="sr-only" />
-            </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer" title="Summarize conversation for context">
-              <BrainCircuit size={16} className={gemini.useSmartContext ? 'text-[hsl(var(--accent-hsl))]' : 'text-[hsl(var(--muted-foreground-hsl))]'} />
-              <span className={gemini.useSmartContext ? '' : 'text-[hsl(var(--muted-foreground-hsl))]'}>Context</span>
-              <input type="checkbox" checked={gemini.useSmartContext} onChange={toggleSmartContext} className="sr-only" />
-            </label>
+      <main className="flex-1 flex flex-col bg-[hsl(var(--card-hsl))] relative">
+        <header className="flex items-center justify-between px-6 py-3 border-b border-[hsl(var(--border-hsl))] bg-[hsl(var(--card-hsl))/0.8] backdrop-blur-md sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-[hsl(var(--accent-hsl))/0.1] text-[hsl(var(--accent-hsl))]">
+              <Sparkles size={18} />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold">{currentSession?.title || 'New Conversation'}</h2>
+              <p className="text-xs text-[hsl(var(--muted-foreground-hsl))] flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
+                {gemini.model === 'gemini-2.5-flash' ? 'Gemini Flash' : 'Gemini Pro'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-[hsl(var(--secondary-hsl))] p-1 rounded-lg border border-[hsl(var(--border-hsl))]">
+            <button
+              onClick={toggleGrounding}
+              className={`p-1.5 rounded-md transition-all ${gemini.useGrounding ? 'bg-[hsl(var(--background-hsl))] text-[hsl(var(--accent-hsl))] shadow-sm' : 'text-[hsl(var(--muted-foreground-hsl))] hover:text-[hsl(var(--foreground-hsl))]'}`}
+              title="Web Search (Grounding)"
+            >
+              <Globe size={16} />
+            </button>
+            <button
+              onClick={toggleSmartContext}
+              className={`p-1.5 rounded-md transition-all ${gemini.useSmartContext ? 'bg-[hsl(var(--background-hsl))] text-[hsl(var(--accent-hsl))] shadow-sm' : 'text-[hsl(var(--muted-foreground-hsl))] hover:text-[hsl(var(--foreground-hsl))]'}`}
+              title="Smart Context"
+            >
+              <BrainCircuit size={16} />
+            </button>
+            <div className="w-px h-4 bg-[hsl(var(--border-hsl))] mx-1"></div>
             <select
               title="Model"
               value={gemini.model}
               onChange={(e) => setGeminiModel(e.target.value as GeminiModel)}
-              className="bg-[hsl(var(--secondary-hsl))] border border-[hsl(var(--border-hsl))] rounded-md p-1 text-sm focus:outline-none"
+              className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer text-[hsl(var(--foreground-hsl))]"
             >
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-              <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+              <option value="gemini-2.5-flash">Flash 2.5</option>
+              <option value="gemini-2.5-pro">Pro 2.5</option>
             </select>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {currentSession?.messages.map((msg, index) => (
-            <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-              {msg.role === 'model' && <Bot className="w-6 h-6 shrink-0 text-[hsl(var(--accent-hsl))]" />}
-              <div className={`max-w-xl p-3 rounded-lg ${msg.role === 'user' ? 'bg-[hsl(var(--accent-strong-hsl))] text-[hsl(var(--accent-foreground-hsl))]' : 'bg-[hsl(var(--secondary-hsl))]'}`}>
-                <p className="whitespace-pre-wrap">{msg.content}</p>
-                {msg.groundingChunks && msg.groundingChunks.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-[hsl(var(--border-hsl))]">
-                    <h4 className="text-xs font-semibold text-[hsl(var(--muted-foreground-hsl))] mb-1">Sources:</h4>
-                    <ol className="list-decimal list-inside text-xs space-y-1">
-                      {msg.groundingChunks.map((chunk, i) => (
-                        chunk.web ? (
-                          <li key={i}>
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth">
+          <AnimatePresence initial={false}>
+            {currentSession?.messages.map((msg, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`flex items-start gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}
+              >
+                {msg.role === 'model' && (
+                  <div className="w-8 h-8 rounded-full bg-[hsl(var(--accent-hsl))] flex items-center justify-center text-white shrink-0 mt-1 shadow-lg shadow-[hsl(var(--accent-hsl))/0.2]">
+                    <Bot size={16} />
+                  </div>
+                )}
+
+                <div className={`max-w-2xl p-4 rounded-2xl shadow-sm ${msg.role === 'user'
+                  ? 'bg-[hsl(var(--primary-hsl))] text-[hsl(var(--primary-foreground-hsl))] rounded-tr-sm'
+                  : 'bg-[hsl(var(--secondary-hsl))] border border-[hsl(var(--border-hsl))] rounded-tl-sm'
+                  }`}>
+                  <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+                    <ReactMarkdown
+                      components={{
+                        code({ node, className, children, ...props }) {
+                          const match = /language-(\w+)/.exec(className || '')
+                          return match ? (
+                            <div className="rounded-md overflow-hidden my-2 border border-[hsl(var(--border-hsl))]">
+                              <div className="bg-[hsl(var(--muted-hsl))] px-3 py-1 text-xs font-mono text-[hsl(var(--muted-foreground-hsl))] border-b border-[hsl(var(--border-hsl))] flex items-center gap-2">
+                                <TerminalIcon size={12} />
+                                {match[1]}
+                              </div>
+                              <pre className="bg-[hsl(var(--background-hsl))] p-3 overflow-x-auto m-0">
+                                <code className={className} {...props}>
+                                  {children}
+                                </code>
+                              </pre>
+                            </div>
+                          ) : (
+                            <code className="bg-[hsl(var(--muted-hsl))] px-1.5 py-0.5 rounded text-xs font-mono" {...props}>
+                              {children}
+                            </code>
+                          )
+                        }
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+
+                  {msg.groundingChunks && msg.groundingChunks.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-[hsl(var(--border-hsl))/0.5]">
+                      <h4 className="text-[10px] uppercase tracking-wider font-bold opacity-50 mb-2 flex items-center gap-1">
+                        <Globe size={10} /> Sources
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {msg.groundingChunks.map((chunk, i) => (
+                          chunk.web ? (
                             <a
+                              key={i}
                               href={chunk.web.uri}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[hsl(var(--accent-hsl))] hover:underline truncate"
+                              className="text-xs bg-[hsl(var(--background-hsl))] hover:bg-[hsl(var(--accent-hsl))/0.1] border border-[hsl(var(--border-hsl))] hover:border-[hsl(var(--accent-hsl))] px-2 py-1 rounded-md transition-all truncate max-w-[200px] flex items-center gap-1"
                               title={chunk.web.uri}
                             >
-                              {chunk.web.title || chunk.web.uri}
+                              <span className="truncate">{chunk.web.title || new URL(chunk.web.uri).hostname}</span>
                             </a>
-                          </li>
-                        ) : null
-                      ))}
-                    </ol>
+                          ) : null
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {msg.role === 'user' && (
+                  <div className="w-8 h-8 rounded-full bg-[hsl(var(--muted-hsl))] flex items-center justify-center text-[hsl(var(--muted-foreground-hsl))] shrink-0 mt-1">
+                    <User size={16} />
                   </div>
                 )}
-              </div>
-              {msg.role === 'user' && <User className="w-6 h-6 shrink-0" />}
-            </div>
-          ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
           {gemini.isLoading && (
-            <div className="flex items-start gap-3">
-              <Bot className="w-6 h-6 shrink-0 text-[hsl(var(--accent-hsl))]" />
-              <div className="max-w-xl p-3 rounded-lg bg-[hsl(var(--secondary-hsl))] animate-pulse">
-                <div className="h-4 bg-[hsl(var(--muted-hsl))] rounded w-24"></div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-4"
+            >
+              <div className="w-8 h-8 rounded-full bg-[hsl(var(--accent-hsl))] flex items-center justify-center text-white shrink-0 mt-1 shadow-lg shadow-[hsl(var(--accent-hsl))/0.2]">
+                <Bot size={16} />
               </div>
-            </div>
+              <div className="p-4 rounded-2xl rounded-tl-sm bg-[hsl(var(--secondary-hsl))] border border-[hsl(var(--border-hsl))]">
+                <div className="flex gap-1.5">
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 1, delay: 0 }}
+                    className="w-2 h-2 rounded-full bg-[hsl(var(--accent-hsl))]"
+                  />
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 1, delay: 0.2 }}
+                    className="w-2 h-2 rounded-full bg-[hsl(var(--accent-hsl))]"
+                  />
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 1, delay: 0.4 }}
+                    className="w-2 h-2 rounded-full bg-[hsl(var(--accent-hsl))]"
+                  />
+                </div>
+              </div>
+            </motion.div>
           )}
           <div ref={chatEndRef} />
         </div>
 
-        <div className="p-4 border-t border-[hsl(var(--border-hsl))]">
-          <div className="relative">
+        <div className="p-4 border-t border-[hsl(var(--border-hsl))] bg-[hsl(var(--card-hsl))]">
+          <div className="relative max-w-4xl mx-auto">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              placeholder="Message Gemini..."
-              className="w-full bg-[hsl(var(--secondary-hsl))] border border-[hsl(var(--border-hsl))] rounded-lg p-3 pr-12 resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring-hsl))]"
+              placeholder="Ask anything..."
+              className="w-full bg-[hsl(var(--secondary-hsl))] border border-[hsl(var(--border-hsl))] rounded-xl p-4 pr-14 resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring-hsl))] focus:border-transparent shadow-sm transition-all min-h-[60px]"
               rows={1}
               disabled={gemini.isLoading}
             />
@@ -190,11 +287,14 @@ const GeminiChat: React.FC = () => {
               title="Send message"
               onClick={handleSend}
               disabled={gemini.isLoading || !input.trim()}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-[hsl(var(--accent-strong-hsl))] text-[hsl(var(--accent-foreground-hsl))] disabled:bg-[hsl(var(--muted-hsl))] hover:brightness-90 transition-all"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-lg bg-[hsl(var(--primary-hsl))] text-[hsl(var(--primary-foreground-hsl))] disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 transition-all shadow-sm"
             >
               <Send size={18} />
             </button>
           </div>
+          <p className="text-center text-[10px] text-[hsl(var(--muted-foreground-hsl))] mt-2">
+            Gemini can make mistakes. Check important info.
+          </p>
         </div>
       </main>
     </div>
