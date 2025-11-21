@@ -1,164 +1,175 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useKernel } from '../../store/kernel';
-import { Folder, FolderPlus, Trash2, FolderOpen } from 'lucide-react';
+import {
+    Folder,
+    FileText,
+    Image as ImageIcon,
+    Link as LinkIcon,
+    FileCode,
+    ChevronRight,
+    ArrowLeft,
+    ArrowUp,
+    Home,
+    Search
+} from 'lucide-react';
+import {
+    getFilesInPath,
+    getParentPath,
+    getPathBreadcrumbs,
+    getFileIcon,
+    resolvePath
+} from '../../lib/filesystemUtils';
+import { VirtualFile, VirtualFileType } from '../../types';
+
+const FileIcon = ({ type, className }: { type: VirtualFileType, className?: string }) => {
+    switch (type) {
+        case 'folder': return <Folder className={className} />;
+        case 'markdown': return <FileText className={className} />;
+        case 'image': return <ImageIcon className={className} />;
+        case 'link': return <LinkIcon className={className} />;
+        case 'pdf': return <FileText className={className} />; // Generic text for now
+        case 'text': return <FileCode className={className} />;
+        default: return <FileText className={className} />;
+    }
+};
 
 const FileManager: React.FC = () => {
-    const projectFolders = useKernel(state => state.projectFolders);
-    const addProjectFolder = useKernel(state => state.addProjectFolder);
-    const removeProjectFolder = useKernel(state => state.removeProjectFolder);
+    const currentPath = useKernel(state => state.currentPath);
+    const navigateToPath = useKernel(state => state.navigateToPath);
+    const openFile = useKernel(state => state.openFile);
     const openWindow = useKernel(state => state.openWindow);
 
-    const [showAddForm, setShowAddForm] = useState(false);
-    const [newFolderName, setNewFolderName] = useState('');
-    const [newFolderPath, setNewFolderPath] = useState('');
-    const [newFolderColor, setNewFolderColor] = useState('#3b82f6');
+    const [files, setFiles] = useState<VirtualFile[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const handleAddFolder = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newFolderName.trim() || !newFolderPath.trim()) return;
+    useEffect(() => {
+        setFiles(getFilesInPath(currentPath));
+    }, [currentPath]);
 
-        addProjectFolder({
-            name: newFolderName.trim(),
-            path: newFolderPath.trim(),
-            color: newFolderColor,
-        });
-
-        // Reset form
-        setNewFolderName('');
-        setNewFolderPath('');
-        setNewFolderColor('#3b82f6');
-        setShowAddForm(false);
+    const handleNavigate = (path: string) => {
+        navigateToPath(path);
+        setSearchQuery('');
     };
 
-    const handleOpenFolder = (folderId: string) => {
-        openWindow(folderId as any); // Will open FolderView
+    const handleUp = () => {
+        const parent = getParentPath(currentPath);
+        handleNavigate(parent);
     };
+
+    const handleItemClick = (file: VirtualFile) => {
+        if (file.type === 'folder') {
+            handleNavigate(file.path);
+        } else {
+            if (file.type === 'link' && file.content?.url) {
+                window.open(file.content.url, '_blank');
+            } else {
+                // For now, just log. Viewers coming next.
+                console.log('Opening file:', file.name);
+                openFile(file.id);
+            }
+        }
+    };
+
+    const breadcrumbs = getPathBreadcrumbs(currentPath);
 
     return (
-        <div className="h-full flex flex-col bg-[hsl(var(--background-hsl))] text-[hsl(var(--foreground-hsl))] p-6">
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                    <Folder className="w-6 h-6" />
-                    File Manager
-                </h1>
+        <div className="h-full flex flex-col bg-[hsl(var(--background-hsl))] text-[hsl(var(--foreground-hsl))]">
+            {/* Toolbar / Navigation Bar */}
+            <div className="flex items-center gap-2 p-2 border-b border-[hsl(var(--border-hsl))] bg-[hsl(var(--card-hsl))]">
                 <button
-                    onClick={() => setShowAddForm(!showAddForm)}
-                    className="flex items-center gap-2 px-4 py-2 bg-[hsl(var(--accent-strong-hsl))] text-[hsl(var(--accent-foreground-hsl))] rounded-md hover:brightness-90 transition-all"
+                    onClick={handleUp}
+                    disabled={currentPath === '/'}
+                    className="p-1.5 rounded hover:bg-[hsl(var(--secondary-hsl))] disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Go Up"
                 >
-                    <FolderPlus size={18} />
-                    Add Project Folder
+                    <ArrowUp size={18} />
                 </button>
-            </div>
 
-            {showAddForm && (
-                <div className="mb-6 p-4 bg-[hsl(var(--card-hsl))] border border-[hsl(var(--border-hsl))] rounded-lg">
-                    <h2 className="text-lg font-semibold mb-4">New Project Folder</h2>
-                    <form onSubmit={handleAddFolder} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Folder Name</label>
-                            <input
-                                type="text"
-                                value={newFolderName}
-                                onChange={(e) => setNewFolderName(e.target.value)}
-                                placeholder="My Awesome Project"
-                                className="w-full px-3 py-2 bg-[hsl(var(--secondary-hsl))] border border-[hsl(var(--border-hsl))] rounded-md focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring-hsl))]"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Folder Path</label>
-                            <input
-                                type="text"
-                                value={newFolderPath}
-                                onChange={(e) => setNewFolderPath(e.target.value)}
-                                placeholder="C:/Projects/my-awesome-project"
-                                className="w-full px-3 py-2 bg-[hsl(var(--secondary-hsl))] border border-[hsl(var(--border-hsl))] rounded-md focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring-hsl))]"
-                                required
-                            />
-                            <p className="text-xs text-[hsl(var(--muted-foreground-hsl))] mt-1">
-                                Enter the full path to your project folder
-                            </p>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Folder Color</label>
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="color"
-                                    value={newFolderColor}
-                                    onChange={(e) => setNewFolderColor(e.target.value)}
-                                    className="w-12 h-10 rounded cursor-pointer"
-                                />
-                                <span className="text-sm text-[hsl(var(--muted-foreground-hsl))]">{newFolderColor}</span>
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-[hsl(var(--accent-strong-hsl))] text-[hsl(var(--accent-foreground-hsl))] rounded-md hover:brightness-90 transition-all"
-                            >
-                                Add Folder
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setShowAddForm(false)}
-                                className="px-4 py-2 bg-[hsl(var(--secondary-hsl))] text-[hsl(var(--secondary-foreground-hsl))] rounded-md hover:brightness-90 transition-all"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
-
-            <div className="flex-1 overflow-auto">
-                <h2 className="text-lg font-semibold mb-4">Project Folders</h2>
-                {projectFolders.length === 0 ? (
-                    <div className="text-center py-12 text-[hsl(var(--muted-foreground-hsl))]">
-                        <Folder className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg mb-2">No project folders yet</p>
-                        <p className="text-sm">Add a folder to create a desktop shortcut</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {projectFolders.map((folder) => (
-                            <div
-                                key={folder.id}
-                                className="p-4 bg-[hsl(var(--card-hsl))] border border-[hsl(var(--border-hsl))] rounded-lg hover:shadow-lg transition-all"
-                            >
-                                <div className="flex items-start justify-between mb-2">
-                                    <div className="flex items-center gap-3 flex-1">
-                                        <FolderOpen
-                                            className="w-8 h-8 shrink-0"
-                                            style={{ color: folder.color || '#3b82f6' }}
-                                        />
-                                        <div className="min-w-0">
-                                            <h3 className="font-semibold truncate">{folder.name}</h3>
-                                            <p className="text-sm text-[hsl(var(--muted-foreground-hsl))] truncate">
-                                                {folder.path}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => removeProjectFolder(folder.id)}
-                                        className="p-2 text-[hsl(var(--muted-foreground-hsl))] hover:text-[hsl(var(--destructive-hsl))] hover:bg-[hsl(var(--destructive-hsl)/0.1)] rounded transition-all"
-                                        title="Remove folder"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
-                                <button
-                                    onClick={() => handleOpenFolder(folder.id)}
-                                    className="w-full mt-2 px-3 py-1.5 text-sm bg-[hsl(var(--secondary-hsl))] text-[hsl(var(--secondary-foreground-hsl))] rounded hover:bg-[hsl(var(--accent-strong-hsl))] hover:text-[hsl(var(--accent-foreground-hsl))] transition-all"
+                <div className="flex-1 flex items-center px-3 py-1.5 bg-[hsl(var(--secondary-hsl))] rounded border border-[hsl(var(--border-hsl))] overflow-hidden">
+                    <Home
+                        size={16}
+                        className="mr-2 cursor-pointer hover:text-[hsl(var(--accent-strong-hsl))]"
+                        onClick={() => handleNavigate('/')}
+                    />
+                    <div className="flex items-center text-sm whitespace-nowrap overflow-x-auto scrollbar-hide">
+                        {breadcrumbs.map((crumb, index) => (
+                            <React.Fragment key={crumb.path}>
+                                {index > 0 && <ChevronRight size={14} className="mx-1 text-[hsl(var(--muted-foreground-hsl))]" />}
+                                <span
+                                    className={`cursor-pointer hover:text-[hsl(var(--accent-strong-hsl))] ${index === breadcrumbs.length - 1 ? 'font-semibold' : ''}`}
+                                    onClick={() => handleNavigate(crumb.path)}
                                 >
-                                    Open Folder
-                                </button>
-                                <div className="mt-2 text-xs text-[hsl(var(--muted-foreground-hsl))]">
-                                    Created {new Date(folder.createdAt).toLocaleDateString()}
-                                </div>
-                            </div>
+                                    {crumb.name}
+                                </span>
+                            </React.Fragment>
                         ))}
                     </div>
-                )}
+                </div>
+
+                <div className="relative">
+                    <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground-hsl))]" />
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-8 pr-3 py-1.5 text-sm bg-[hsl(var(--secondary-hsl))] border border-[hsl(var(--border-hsl))] rounded focus:outline-none focus:ring-1 focus:ring-[hsl(var(--ring-hsl))] w-48"
+                    />
+                </div>
+            </div>
+
+            <div className="flex-1 flex overflow-hidden">
+                {/* Sidebar (Simplified for now - just quick links) */}
+                <div className="w-48 border-r border-[hsl(var(--border-hsl))] bg-[hsl(var(--card-hsl))] p-2 hidden md:block">
+                    <div className="text-xs font-semibold text-[hsl(var(--muted-foreground-hsl))] mb-2 px-2 uppercase tracking-wider">Favorites</div>
+                    <nav className="space-y-1">
+                        <button onClick={() => handleNavigate('/')} className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm ${currentPath === '/' ? 'bg-[hsl(var(--accent-strong-hsl))] text-white' : 'hover:bg-[hsl(var(--secondary-hsl))]'}`}>
+                            <Home size={16} /> Home
+                        </button>
+                        <button onClick={() => handleNavigate('/projects')} className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm ${currentPath.startsWith('/projects') ? 'bg-[hsl(var(--accent-strong-hsl))] text-white' : 'hover:bg-[hsl(var(--secondary-hsl))]'}`}>
+                            <Folder size={16} /> Projects
+                        </button>
+                        <button onClick={() => handleNavigate('/about')} className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm ${currentPath.startsWith('/about') ? 'bg-[hsl(var(--accent-strong-hsl))] text-white' : 'hover:bg-[hsl(var(--secondary-hsl))]'}`}>
+                            <Folder size={16} /> About
+                        </button>
+                        <button onClick={() => handleNavigate('/contact')} className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm ${currentPath.startsWith('/contact') ? 'bg-[hsl(var(--accent-strong-hsl))] text-white' : 'hover:bg-[hsl(var(--secondary-hsl))]'}`}>
+                            <Folder size={16} /> Contact
+                        </button>
+                    </nav>
+                </div>
+
+                {/* Main Content */}
+                <div className="flex-1 overflow-auto p-4">
+                    {files.length === 0 ? (
+                        <div className="text-center py-12 text-[hsl(var(--muted-foreground-hsl))]">
+                            <Folder className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                            <p>This folder is empty</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            {files.map(file => (
+                                <div
+                                    key={file.id}
+                                    onDoubleClick={() => handleItemClick(file)}
+                                    className="group flex flex-col items-center p-3 rounded-lg hover:bg-[hsl(var(--accent-strong-hsl))/0.1] cursor-pointer transition-colors border border-transparent hover:border-[hsl(var(--accent-strong-hsl))/0.2]"
+                                >
+                                    <div className={`w-12 h-12 mb-2 flex items-center justify-center text-[hsl(var(--accent-strong-hsl))] transition-transform group-hover:scale-110`}>
+                                        <FileIcon type={file.type} className="w-full h-full" />
+                                    </div>
+                                    <span className="text-sm text-center truncate w-full px-1 select-none group-hover:text-[hsl(var(--accent-strong-hsl))]">
+                                        {file.name}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Status Bar */}
+            <div className="px-3 py-1 border-t border-[hsl(var(--border-hsl))] bg-[hsl(var(--card-hsl))] text-xs text-[hsl(var(--muted-foreground-hsl))] flex justify-between">
+                <span>{files.length} item{files.length !== 1 ? 's' : ''}</span>
+                <span>{currentPath}</span>
             </div>
         </div>
     );

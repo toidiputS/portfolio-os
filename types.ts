@@ -1,5 +1,6 @@
 import {
   AppId,
+  BuiltInAppId,
   AppDefinition,
   ChatMessage,
   ChatSession,
@@ -7,10 +8,14 @@ import {
   GroundingChunk,
   Theme,
   WindowInstance,
+  VirtualFile,
+  VirtualFileType,
+  ProjectFolder,
 } from "./src/types";
 
 export type {
   AppId,
+  BuiltInAppId,
   AppDefinition,
   ChatMessage,
   ChatSession,
@@ -18,6 +23,9 @@ export type {
   GroundingChunk,
   Theme,
   WindowInstance,
+  VirtualFile,
+  VirtualFileType,
+  ProjectFolder,
 };
 
 export interface KernelState {
@@ -44,10 +52,13 @@ export interface KernelState {
   theme: Theme;
   initialGreetingSpoken: boolean;
   micPermissionGranted: boolean;
+  currentPath: string; // Current directory in virtual filesystem
+  projectFolders: ProjectFolder[]; // User's project folder bookmarks
+
   setInitialGreetingSpoken: (status: boolean) => void;
   setMicPermissionGranted: (status: boolean) => void;
 
-  openWindow: (appId: AppId, size?: { width: number; height: number }) => void;
+  openWindow: (appId: AppId, size?: { width: number; height: number }, metadata?: any) => void;
   closeWindow: (id: string) => void;
   closeWindowByAppId: (appId: AppId) => void;
   focusWindow: (id: string) => void;
@@ -93,4 +104,13 @@ export interface KernelState {
   setHasNewMessage: (status: boolean) => void;
   toggleTheme: () => void;
   setHasWelcomed: (status: boolean) => void;
+
+  // Project folder actions
+  addProjectFolder: (folder: Omit<ProjectFolder, 'id' | 'createdAt'>) => void;
+  removeProjectFolder: (id: string) => void;
+  updateProjectFolder: (id: string, updates: Partial<ProjectFolder>) => void;
+
+  // Virtual filesystem actions
+  navigateToPath: (path: string) => void;
+  openFile: (fileId: string) => void;
 }

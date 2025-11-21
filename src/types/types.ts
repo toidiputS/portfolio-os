@@ -6,10 +6,8 @@ export type BuiltInAppId =
   | "markdownEditor"
   | "settings"
   | "appStore"
-  | "minesweeper"
-  | "solitaire"
-  | "snake"
-  | "fileManager";
+  | "fileManager"
+  | "fileViewer";
 
 // Allow dynamic folder IDs like "folder:my-project"
 export type AppId = BuiltInAppId | `folder:${string}`;
@@ -45,6 +43,7 @@ export interface VirtualFile {
     imageUrl?: string;
     pdfUrl?: string;
     text?: string;
+    alt?: string;
   };
 
   size?: string;          // "2.4 KB" (for display)
@@ -82,6 +81,7 @@ export interface WindowInstance {
   | "right";
   preSnapPosition?: { x: number; y: number };
   preSnapSize?: { width: number; height: number };
+  metadata?: any; // Optional data passed to the app (e.g., file path)
 }
 
 export type GeminiModel =

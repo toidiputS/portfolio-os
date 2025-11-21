@@ -33,7 +33,7 @@ const useKernelStore = create<KernelState>()(
       projectFolders: [], // User's project folder bookmarks
       currentPath: '/', // Current directory in virtual filesystem
 
-      openWindow: (appId, size = { width: 800, height: 600 }) => {
+      openWindow: (appId, size = { width: 800, height: 600 }, metadata) => {
         const newWindow: WindowInstance = {
           id: nanoid(),
           appId,
@@ -43,6 +43,7 @@ const useKernelStore = create<KernelState>()(
           zIndex: get().nextZIndex,
           minimized: false,
           snapState: 'none',
+          metadata,
         };
         set(state => ({
           windows: [...state.windows, newWindow],
@@ -255,9 +256,7 @@ const useKernelStore = create<KernelState>()(
         set({ currentPath: path });
       },
       openFile: (fileId) => {
-        // Will be implemented to open file viewers
-        // For now, just placeholder
-        console.log('Opening file:', fileId);
+        get().openWindow('fileViewer', { width: 800, height: 600 }, { fileId });
       },
     }),
     {

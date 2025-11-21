@@ -168,9 +168,9 @@ const Terminal: React.FC = () => {
                 } else if (file.type === 'folder') {
                     cmdOutput = [{ type: 'error', text: `cat: ${args[0]}: Is a directory` }];
                 } else if (file.type === 'markdown' && file.content?.markdown) {
-                    cmdOutput = file.content.markdown.split('\n').map(text => ({ type: 'output' as const, text }));
+                    cmdOutput = file.content.markdown.split('\n').map((text: string) => ({ type: 'output' as const, text }));
                 } else if (file.type === 'text' && file.content?.text) {
-                    cmdOutput = file.content.text.split('\n').map(text => ({ type: 'output' as const, text }));
+                    cmdOutput = file.content.text.split('\n').map((text: string) => ({ type: 'output' as const, text }));
                 } else if (file.type === 'link' && file.content?.url) {
                     cmdOutput = [
                         { type: 'output', text: `Link: ${file.content.url}` },

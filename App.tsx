@@ -56,7 +56,7 @@ const App: React.FC = () => {
                   <Suspense
                     fallback={<div className="p-4">Loading App...</div>}
                   >
-                    <App />
+                    <App metadata={win.metadata} />
                   </Suspense>
                 </Window>
               );
