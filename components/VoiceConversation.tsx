@@ -46,23 +46,123 @@ declare global {
     }
 }
 
+let startListeningCallback: (() => void) | null = null;
+
 /**
- * VoiceConversation - DISABLED for now to prevent infinite loop
- * To re-enable, user needs to implement proper error handling
+ * Export function to trigger push-to-talk from the overlay
+ */
+export const startPushToTalk = () => {
+    if (startListeningCallback) {
+        startListeningCallback();
+    }
+};
+
+/**
+ * VoiceConversation - Push-to-talk voice assistant
  */
 const VoiceConversation: React.FC = () => {
-    // DISABLED - This component is currently inactive to prevent errors
-    // Uncomment the code below to re-enable voice conversation
-
-    /*
     const micPermissionGranted = useKernel(state => state.micPermissionGranted);
     const gemini = useKernel(state => state.gemini);
-    const [conversationHistory, setConversationHistory] = useState<Array<{role: 'user' | 'model', content: string}>>([]);
-    
-    // Voice conversation logic would go here
-    */
+    const [conversationHistory, setConversationHistory] = useState<Array<{ role: 'user' | 'model', content: string }>>([]);
+    const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-    return null; // This component is invisible and currently disabled
+    useEffect(() => {
+        if (!micPermissionGranted) return;
+
+        // Initialize speech recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            console.warn('Speech recognition not supported');
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false; // ONE command at a time
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = async (event: SpeechRecognitionEvent) => {
+            const result = event.results[event.resultIndex];
+            if (result.isFinal) {
+                const transcript = result[0].transcript.trim();
+                console.log('You said:', transcript);
+
+                // Process the command
+                await handleVoiceCommand(transcript);
+            }
+        };
+
+        recognition.onerror = (event: any) => {
+            console.error('Speech recognition error:', event.error);
+        };
+
+        recognition.onend = () => {
+            console.log('Listening stopped');
+        };
+
+        recognitionRef.current = recognition;
+
+        // Register the callback for push-to-talk
+        startListeningCallback = () => {
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.start();
+                    console.log('🎤 Listening... Speak now!');
+                } catch (e) {
+                    console.error('Failed to start recognition:', e);
+                }
+            }
+        };
+
+        return () => {
+            startListeningCallback = null;
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.stop();
+                } catch (e) {
+                    // Ignore cleanup errors
+                }
+            }
+        };
+    }, [micPermissionGranted]);
+
+    const handleVoiceCommand = async (userInput: string) => {
+        if (!userInput) {
+            speak("I didn't catch that. Please try again.");
+            return;
+        }
+
+        console.log('Processing command:', userInput);
+
+        // Add to conversation history
+        const userMessage = { role: 'user' as const, content: userInput };
+        const newHistory = [...conversationHistory, userMessage];
+        setConversationHistory(newHistory);
+
+        try {
+            // Get AI response
+            const { text: responseText } = await generateResponse(
+                userInput,
+                gemini.model,
+                newHistory,
+                false // Don't use grounding for voice (faster)
+            );
+
+            if (responseText) {
+                // Add to history
+                const modelMessage = { role: 'model' as const, content: responseText };
+                setConversationHistory([...newHistory, modelMessage]);
+
+                // Speak the response
+                speak(responseText);
+            }
+        } catch (error) {
+            console.error('Error processing voice command:', error);
+            speak("Sorry, I encountered an error processing your request.");
+        }
+    };
+
+    return null; // This component is invisible
 };
 
 export default VoiceConversation;

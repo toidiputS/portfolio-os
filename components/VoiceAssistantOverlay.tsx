@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Volume2 } from 'lucide-react';
+import { Mic, Volume2, MicOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { startPushToTalk } from './VoiceConversation';
+import { useKernel } from '../store/kernel';
 
 interface SpeechBubble {
     id: string;
@@ -22,6 +24,8 @@ export const showSpeechBubble = (text: string) => {
 const VoiceAssistantOverlay: React.FC = () => {
     const [bubbles, setBubbles] = useState<SpeechBubble[]>([]);
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isListening, setIsListening] = useState(false);
+    const micPermissionGranted = useKernel(state => state.micPermissionGranted);
 
     useEffect(() => {
         // Register callback for adding bubbles
@@ -54,6 +58,28 @@ const VoiceAssistantOverlay: React.FC = () => {
         }
     }, []);
 
+    const handleMicClick = () => {
+        if (!micPermissionGranted) {
+            alert('Microphone permission required. Please refresh and allow microphone access.');
+            return;
+        }
+
+        if (isSpeaking) {
+            // Stop current speech
+            window.speechSynthesis.cancel();
+            return;
+        }
+
+        // Start push-to-talk
+        setIsListening(true);
+        startPushToTalk();
+
+        // Auto-stop listening indicator after 5 seconds
+        setTimeout(() => {
+            setIsListening(false);
+        }, 5000);
+    };
+
     return (
         <div className="fixed bottom-4 right-4 z-9999 pointer-events-none">
             {/* Speech Bubbles */}
@@ -75,12 +101,13 @@ const VoiceAssistantOverlay: React.FC = () => {
                 </AnimatePresence>
             </div>
 
-            {/* Mic Icon */}
+            {/* Mic Icon - Clickable for Push-to-Talk */}
             <motion.div
+                onClick={handleMicClick}
                 className="bg-linear-to-br from-blue-500 to-purple-600 rounded-full p-3 shadow-lg border border-white/20 pointer-events-auto cursor-pointer relative"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                animate={isSpeaking ? {
+                animate={(isSpeaking || isListening) ? {
                     scale: [1, 1.1, 1],
                     boxShadow: [
                         '0 10px 30px rgba(59, 130, 246, 0.3)',
@@ -88,28 +115,33 @@ const VoiceAssistantOverlay: React.FC = () => {
                         '0 10px 30px rgba(59, 130, 246, 0.3)',
                     ],
                 } : {}}
-                transition={isSpeaking ? {
+                transition={(isSpeaking || isListening) ? {
                     duration: 1.5,
                     repeat: Infinity,
                     ease: 'easeInOut',
                 } : {}}
+                title={isListening ? 'Listening... Speak now!' : isSpeaking ? 'Speaking... Click to stop' : micPermissionGranted ? 'Click to speak' : 'Microphone permission required'}
             >
                 {isSpeaking ? (
                     <Volume2 size={24} className="text-white" />
-                ) : (
+                ) : isListening ? (
+                    <Mic size={24} className="text-white animate-pulse" />
+                ) : micPermissionGranted ? (
                     <Mic size={24} className="text-white" />
+                ) : (
+                    <MicOff size={24} className="text-white opacity-50" />
                 )}
 
-                {/* Listening pulse indicator (green dot when not speaking) */}
-                {!isSpeaking && (
+                {/* Listening indicator (red dot when actively listening) */}
+                {isListening && (
                     <motion.div
-                        className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full shadow-sm"
+                        className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full shadow-sm"
                         animate={{
                             scale: [1, 1.3, 1],
-                            opacity: [0.7, 1, 0.7],
+                            opacity: [1, 0.7, 1],
                         }}
                         transition={{
-                            duration: 2,
+                            duration: 0.8,
                             repeat: Infinity,
                             ease: 'easeInOut',
                         }}
