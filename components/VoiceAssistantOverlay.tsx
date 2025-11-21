@@ -77,7 +77,7 @@ const VoiceAssistantOverlay: React.FC = () => {
 
             {/* Mic Icon */}
             <motion.div
-                className="bg-linear-to-br from-blue-500 to-purple-600 rounded-full p-3 shadow-lg border border-white/20 pointer-events-auto cursor-pointer"
+                className="bg-linear-to-br from-blue-500 to-purple-600 rounded-full p-3 shadow-lg border border-white/20 pointer-events-auto cursor-pointer relative"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 animate={isSpeaking ? {
@@ -98,6 +98,22 @@ const VoiceAssistantOverlay: React.FC = () => {
                     <Volume2 size={24} className="text-white" />
                 ) : (
                     <Mic size={24} className="text-white" />
+                )}
+
+                {/* Listening pulse indicator (green dot when not speaking) */}
+                {!isSpeaking && (
+                    <motion.div
+                        className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full shadow-sm"
+                        animate={{
+                            scale: [1, 1.3, 1],
+                            opacity: [0.7, 1, 0.7],
+                        }}
+                        transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                        }}
+                    />
                 )}
             </motion.div>
         </div>
