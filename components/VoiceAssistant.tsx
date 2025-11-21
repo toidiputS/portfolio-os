@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useKernel } from '../store/kernel';
+import { showSpeechBubble } from './VoiceAssistantOverlay';
 
 /**
  * VoiceAssistant - Handles Text-to-Speech for the AI assistant
@@ -50,7 +51,7 @@ const VoiceAssistant: React.FC = () => {
 };
 
 /**
- * Speak text using Web Speech API
+ * Speak text using Web Speech API with visual feedback
  */
 export const speak = (text: string, rate: number = 1.0, pitch: number = 1.0) => {
     if (!('speechSynthesis' in window)) {
@@ -60,6 +61,9 @@ export const speak = (text: string, rate: number = 1.0, pitch: number = 1.0) => 
 
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
+
+    // Show visual speech bubble
+    showSpeechBubble(text);
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = rate;

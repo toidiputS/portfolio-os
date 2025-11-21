@@ -7,6 +7,7 @@ import Window from "./components/Window";
 import WelcomeScreen from "./components/WelcomeScreen";
 import Sidebar from "./components/Sidebar";
 import VoiceAssistant from "./components/VoiceAssistant";
+import VoiceAssistantOverlay from "./components/VoiceAssistantOverlay";
 import { getAllApps } from "./apps.config";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -67,6 +68,7 @@ const App: React.FC = () => {
           <Sidebar />
           <Taskbar />
           <VoiceAssistant />
+          <VoiceAssistantOverlay />
         </motion.div>
       )}
       <Analytics />
