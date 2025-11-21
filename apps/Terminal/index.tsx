@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useKernel } from '../../store/kernel';
+import {
+    resolvePath,
+    getFilesInPath,
+    getFileByPath,
+    getFileIcon,
+    buildTreeView,
+    searchFiles
+} from '../../lib/filesystemUtils';
 
 type OutputLine = {
     type: 'input' | 'output' | 'error';
@@ -7,16 +15,34 @@ type OutputLine = {
 };
 
 const HELP_MESSAGE = `Available commands:
-  help      - Show this help message.
-  clear     - Clear the terminal screen.
-  date      - Display the current date and time.
-  emails    - List collected emails.
-  matrix    - Enter the matrix.
-  neofetch  - Display system information.`;
+
+SYSTEM:
+  help      - Show this help message
+  clear     - Clear the terminal screen
+  date      - Display current date and time
+  matrix    - Enter the matrix
+  neofetch  - Display system information
+
+FILESYSTEM:
+  ls [path]     - List directory contents
+  cd <path>     - Change directory
+  pwd           - Print working directory
+  tree [path]   - Show directory tree
+  cat <file>    - Display file contents
+  open <file>   - Open file/folder in GUI
+  find <name>   - Search for files
+
+PORTFOLIO:
+  projects  - View all projects
+  about     - Open bio
+  contact   - View contact info
+
+OTHER:
+  emails    - List collected emails`;
 
 const NEOFETCH_OUTPUT = `
         ,.=:!!t3Z3z.,                -----------
-       :i:i|i|i|i|i|i:iH3s.,           OS: Doors OS
+       :i:i|i|i|i|i|i:iH3s.,           OS: Portfolio OS
       |i|i|i|i|i|i|i|i|i|i|iHS.        Kernel: 1.0.0-react
       ;i|i|i|i|i|i|i|i|i|i|i|i|i:       Uptime: just now
      .i|i|i|i|i|i|i|i|i|i|i|i|i|i:      Shell: term.sh
@@ -30,7 +56,7 @@ const NEOFETCH_OUTPUT = `
 const Terminal: React.FC = () => {
     const [input, setInput] = useState('');
     const [output, setOutput] = useState<OutputLine[]>([
-        { type: 'output', text: 'Doors OS Terminal [Version 1.0.0]' },
+        { type: 'output', text: 'Portfolio OS Terminal [Version 1.0.0]' },
         { type: 'output', text: '(c) Portfolio Corporation. All rights reserved.' },
         { type: 'output', text: 'Type "help" for a list of commands.' },
     ]);
@@ -41,7 +67,11 @@ const Terminal: React.FC = () => {
     const toggleMatrixEffect = useKernel(state => state.toggleMatrixEffect);
     const closeWindow = useKernel(state => state.closeWindow);
     const windows = useKernel(state => state.windows);
-    const thisWindow = windows.find(w => w.appId === 'terminal'); // A bit fragile, assumes one terminal
+    const currentPath = useKernel(state => state.currentPath);
+    const navigateToPath = useKernel(state => state.navigateToPath);
+    const openWindow = useKernel(state => state.openWindow);
+
+    const thisWindow = windows.find(w => w.appId === 'terminal');
 
     const handleCommand = (command: string) => {
         const [cmd, ...args] = command.trim().split(' ');
@@ -49,14 +79,17 @@ const Terminal: React.FC = () => {
 
         switch (cmd.toLowerCase()) {
             case 'help':
-                cmdOutput = HELP_MESSAGE.split('\n').map(text => ({ type: 'output', text }));
+                cmdOutput = HELP_MESSAGE.split('\n').map(text => ({ type: 'output' as const, text }));
                 break;
+
             case 'clear':
                 setOutput([]);
                 return;
+
             case 'date':
                 cmdOutput = [{ type: 'output', text: new Date().toString() }];
                 break;
+
             case 'emails':
                 if (collectedEmails.length > 0) {
                     cmdOutput = [
@@ -67,17 +100,163 @@ const Terminal: React.FC = () => {
                     cmdOutput = [{ type: 'output', text: 'No emails collected yet.' }];
                 }
                 break;
+
             case 'matrix':
                 toggleMatrixEffect(true);
                 if (thisWindow) {
                     closeWindow(thisWindow.id);
                 }
                 return;
+
             case 'neofetch':
                 cmdOutput = NEOFETCH_OUTPUT.split('\n').map(text => ({ type: 'output', text }));
                 break;
+
+            // === FILESYSTEM COMMANDS ===
+
+            case 'pwd':
+                cmdOutput = [{ type: 'output', text: currentPath }];
+                break;
+
+            case 'ls': {
+                const targetPath = args[0] ? resolvePath(currentPath, args[0]) : currentPath;
+                const files = getFilesInPath(targetPath);
+
+                if (files.length === 0) {
+                    cmdOutput = [{ type: 'output', text: 'Directory is empty' }];
+                } else {
+                    cmdOutput = files.map(file => {
+                        const icon = getFileIcon(file.type);
+                        const displayName = file.type === 'folder' ? `\x1b[34m${file.name}\x1b[0m` : file.name;
+                        return { type: 'output' as const, text: `${icon} ${displayName}` };
+                    });
+                }
+                break;
+            }
+
+            case 'cd': {
+                if (!args[0]) {
+                    cmdOutput = [{ type: 'error', text: 'cd: missing path argument' }];
+                    break;
+                }
+
+                const newPath = resolvePath(currentPath, args[0]);
+                const targetFolder = getFileByPath(newPath);
+
+                if (!targetFolder) {
+                    cmdOutput = [{ type: 'error', text: `cd: ${args[0]}: No such file or directory` }];
+                } else if (targetFolder.type !== 'folder') {
+                    cmdOutput = [{ type: 'error', text: `cd: ${args[0]}: Not a directory` }];
+                } else {
+                    navigateToPath(newPath);
+                    cmdOutput = [];
+                }
+                break;
+            }
+
+            case 'cat': {
+                if (!args[0]) {
+                    cmdOutput = [{ type: 'error', text: 'cat: missing file argument' }];
+                    break;
+                }
+
+                const filePath = resolvePath(currentPath, args[0]);
+                const file = getFileByPath(filePath);
+
+                if (!file) {
+                    cmdOutput = [{ type: 'error', text: `cat: ${args[0]}: No such file or directory` }];
+                } else if (file.type === 'folder') {
+                    cmdOutput = [{ type: 'error', text: `cat: ${args[0]}: Is a directory` }];
+                } else if (file.type === 'markdown' && file.content?.markdown) {
+                    cmdOutput = file.content.markdown.split('\n').map(text => ({ type: 'output' as const, text }));
+                } else if (file.type === 'text' && file.content?.text) {
+                    cmdOutput = file.content.text.split('\n').map(text => ({ type: 'output' as const, text }));
+                } else if (file.type === 'link' && file.content?.url) {
+                    cmdOutput = [
+                        { type: 'output', text: `Link: ${file.content.url}` },
+                        { type: 'output', text: 'Use "open" command to visit' }
+                    ];
+                } else {
+                    cmdOutput = [{ type: 'error', text: `cat: Cannot display ${file.type} file. Use "open" instead.` }];
+                }
+                break;
+            }
+
+            case 'open': {
+                if (!args[0]) {
+                    cmdOutput = [{ type: 'error', text: 'open: missing file argument' }];
+                    break;
+                }
+
+                const filePath = resolvePath(currentPath, args[0]);
+                const file = getFileByPath(filePath);
+
+                if (!file) {
+                    cmdOutput = [{ type: 'error', text: `open: ${args[0]}: No such file or directory` }];
+                } else if (file.type === 'folder') {
+                    openWindow('fileManager');
+                    navigateToPath(filePath);
+                    cmdOutput = [{ type: 'output', text: `Opening folder: ${file.name}` }];
+                } else if (file.type === 'link' && file.content?.url) {
+                    window.open(file.content.url, '_blank');
+                    cmdOutput = [{ type: 'output', text: `Opening link: ${file.content.url}` }];
+                } else {
+                    cmdOutput = [{ type: 'output', text: `Opening: ${file.name}` }];
+                    // TODO: Open file in appropriate viewer
+                }
+                break;
+            }
+
+            case 'tree': {
+                const targetPath = args[0] ? resolvePath(currentPath, args[0]) : currentPath;
+                const file = getFileByPath(targetPath);
+
+                if (!file) {
+                    cmdOutput = [{ type: 'error', text: `tree: ${args[0] || currentPath}: No such file or directory` }];
+                } else {
+                    cmdOutput = buildTreeView(targetPath).map(text => ({ type: 'output' as const, text }));
+                }
+                break;
+            }
+
+            case 'find': {
+                if (!args[0]) {
+                    cmdOutput = [{ type: 'error', text: 'find: missing search term' }];
+                    break;
+                }
+
+                const results = searchFiles(args[0]);
+
+                if (results.length === 0) {
+                    cmdOutput = [{ type: 'output', text: `No files found matching: ${args[0]}` }];
+                } else {
+                    cmdOutput = results.map(f => ({ type: 'output' as const, text: f.path }));
+                }
+                break;
+            }
+
+            // Portfolio shortcuts
+            case 'projects':
+                navigateToPath('/projects');
+                openWindow('fileManager');
+                cmdOutput = [{ type: 'output', text: 'Opening Projects folder...' }];
+                break;
+
+            case 'about':
+                navigateToPath('/about');
+                openWindow('fileManager');
+                cmdOutput = [{ type: 'output', text: 'Opening About folder...' }];
+                break;
+
+            case 'contact':
+                navigateToPath('/contact');
+                openWindow('fileManager');
+                cmdOutput = [{ type: 'output', text: 'Opening Contact folder...' }];
+                break;
+
             case '':
                 break;
+
             default:
                 cmdOutput = [{ type: 'error', text: `command not found: ${cmd}` }];
                 break;

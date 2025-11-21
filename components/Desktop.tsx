@@ -7,7 +7,7 @@ import MatrixRain from "./MatrixRain";
 
 import Taskbar from "./Taskbar";
 import StartMenu from "./StartMenu";
-import { APPS } from "../apps.config";
+import { getAllApps } from "../apps.config";
 import { PORTAL_BACKGROUNDS } from "../constants";
 
 interface ContextMenuState {
@@ -26,6 +26,7 @@ const Desktop: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const toggleMatrixEffect = useKernel((state) => state.toggleMatrixEffect);
   const closeSidebar = useKernel((state) => state.closeSidebar);
   const theme = useKernel((state) => state.theme);
+  const projectFolders = useKernel((state) => state.projectFolders);
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
@@ -129,7 +130,7 @@ const Desktop: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       <div className="absolute inset-0">
         <SphereImageGrid
-          apps={APPS}
+          apps={getAllApps(projectFolders)}
           onAppClick={openWindow}
           containerSize={Math.min(window.innerWidth, window.innerHeight) * 0.6}
           sphereRadius={Math.min(window.innerWidth, window.innerHeight) * 0.25}

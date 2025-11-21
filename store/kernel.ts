@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
-import { AppId, ChatMessage, ChatSession, GeminiModel, KernelState, WindowInstance, Theme } from '../types';
+import { AppId, ChatMessage, ChatSession, GeminiModel, KernelState, ProjectFolder, WindowInstance, Theme } from '../types';
 
 const useKernelStore = create<KernelState>()(
   persist(
@@ -21,7 +21,7 @@ const useKernelStore = create<KernelState>()(
         useSmartContext: true,
         useGrounding: false,
       },
-      
+
       hasWelcomed: false,
       collectedEmails: [],
       isSidebarOpen: false,
@@ -30,6 +30,8 @@ const useKernelStore = create<KernelState>()(
       theme: 'dark',
       initialGreetingSpoken: false,
       micPermissionGranted: false,
+      projectFolders: [], // User's project folder bookmarks
+      currentPath: '/', // Current directory in virtual filesystem
 
       openWindow: (appId, size = { width: 800, height: 600 }) => {
         const newWindow: WindowInstance = {
@@ -57,7 +59,7 @@ const useKernelStore = create<KernelState>()(
         const windowToClose = get().windows
           .filter(w => w.appId === appId)
           .sort((a, b) => b.zIndex - a.zIndex)[0];
-        
+
         if (windowToClose) {
           get().closeWindow(windowToClose.id);
         }
@@ -71,10 +73,10 @@ const useKernelStore = create<KernelState>()(
             activeWindowId: id,
           }));
         } else if (window && window.minimized) {
-             set(state => ({
-                windows: state.windows.map(w => w.id === id ? { ...w, minimized: false } : w),
-                activeWindowId: id,
-            }));
+          set(state => ({
+            windows: state.windows.map(w => w.id === id ? { ...w, minimized: false } : w),
+            activeWindowId: id,
+          }));
         }
       },
       minimizeWindow: (id) => set(state => ({
@@ -99,7 +101,7 @@ const useKernelStore = create<KernelState>()(
             currentWindow.preSnapPosition = { ...currentWindow.position };
             currentWindow.preSnapSize = { ...currentWindow.size };
           }
-          
+
           currentWindow.snapState = snapState;
 
           switch (snapState) {
@@ -171,9 +173,9 @@ const useKernelStore = create<KernelState>()(
         }));
       },
       selectChatSession: (sessionId) => {
-         if (get().gemini.sessions[sessionId]) {
-            set(state => ({ gemini: { ...state.gemini, currentSessionId: sessionId } }));
-         }
+        if (get().gemini.sessions[sessionId]) {
+          set(state => ({ gemini: { ...state.gemini, currentSessionId: sessionId } }));
+        }
       },
       addMessageToSession: (sessionId, message) => {
         set(state => {
@@ -194,29 +196,29 @@ const useKernelStore = create<KernelState>()(
       toggleGrounding: () => set(state => ({ gemini: { ...state.gemini, useGrounding: !state.gemini.useGrounding } })),
       deleteChatSession: (sessionId: string) => {
         set(state => {
-            const newSessions = { ...state.gemini.sessions };
-            delete newSessions[sessionId];
-            let newCurrentSessionId = state.gemini.currentSessionId;
-            if (newCurrentSessionId === sessionId) {
-                const remainingIds = Object.keys(newSessions);
-                newCurrentSessionId = remainingIds.length > 0 ? remainingIds[0] : null;
-            }
-            return {
-                gemini: { ...state.gemini, sessions: newSessions, currentSessionId: newCurrentSessionId }
-            };
+          const newSessions = { ...state.gemini.sessions };
+          delete newSessions[sessionId];
+          let newCurrentSessionId = state.gemini.currentSessionId;
+          if (newCurrentSessionId === sessionId) {
+            const remainingIds = Object.keys(newSessions);
+            newCurrentSessionId = remainingIds.length > 0 ? remainingIds[0] : null;
+          }
+          return {
+            gemini: { ...state.gemini, sessions: newSessions, currentSessionId: newCurrentSessionId }
+          };
         });
       },
-       updateSessionTitle: (sessionId: string, title: string) => {
+      updateSessionTitle: (sessionId: string, title: string) => {
         set(state => {
-            const session = state.gemini.sessions[sessionId];
-            if (!session) return state;
-            const updatedSession = { ...session, title };
-            return {
-                gemini: {
-                    ...state.gemini,
-                    sessions: { ...state.gemini.sessions, [sessionId]: updatedSession },
-                },
-            };
+          const session = state.gemini.sessions[sessionId];
+          if (!session) return state;
+          const updatedSession = { ...session, title };
+          return {
+            gemini: {
+              ...state.gemini,
+              sessions: { ...state.gemini.sessions, [sessionId]: updatedSession },
+            },
+          };
         });
       },
       setHasWelcomed: (status) => set({ hasWelcomed: status }),
@@ -228,18 +230,48 @@ const useKernelStore = create<KernelState>()(
       toggleMatrixEffect: (status) => set({ isMatrixEffectActive: status }),
       setHasNewMessage: (status) => set({ hasNewMessage: status }),
       toggleTheme: () => set(state => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
+
+      // Project folder actions
+      addProjectFolder: (folder) => {
+        const id = `folder:${nanoid()}`;
+        const newFolder: ProjectFolder = {
+          ...folder,
+          id,
+          createdAt: new Date().toISOString(),
+        };
+        set(state => ({ projectFolders: [...state.projectFolders, newFolder] }));
+      },
+      removeProjectFolder: (id) => {
+        set(state => ({ projectFolders: state.projectFolders.filter(f => f.id !== id) }));
+      },
+      updateProjectFolder: (id, updates) => {
+        set(state => ({
+          projectFolders: state.projectFolders.map(f => f.id === id ? { ...f, ...updates } : f)
+        }));
+      },
+
+      // Virtual filesystem actions
+      navigateToPath: (path) => {
+        set({ currentPath: path });
+      },
+      openFile: (fileId) => {
+        // Will be implemented to open file viewers
+        // For now, just placeholder
+        console.log('Opening file:', fileId);
+      },
     }),
     {
       name: 'win11-portfolio-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-          theme: state.theme,
-          wallpaper: state.wallpaper,
-          collectedEmails: state.collectedEmails,
-          gemini: {
-              ...state.gemini,
-              isLoading: false, 
-          },
+        theme: state.theme,
+        wallpaper: state.wallpaper,
+        collectedEmails: state.collectedEmails,
+        projectFolders: state.projectFolders, // Persist project folders
+        gemini: {
+          ...state.gemini,
+          isLoading: false,
+        },
       })
     }
   )
@@ -247,7 +279,7 @@ const useKernelStore = create<KernelState>()(
 
 const initialState = useKernelStore.getState();
 if (Object.keys(initialState.gemini.sessions).length === 0) {
-    useKernelStore.getState().startNewChat();
+  useKernelStore.getState().startNewChat();
 }
 
 export const useKernel = useKernelStore;

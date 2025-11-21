@@ -2,11 +2,14 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useKernel } from "../store/kernel";
 import Icon from "./Icon";
-import { APPS } from "../apps.config";
+import { getAllApps } from "../apps.config";
 
 const StartMenu: React.FC = () => {
   const isStartMenuOpen = useKernel((state) => state.isStartMenuOpen);
   const openWindow = useKernel((state) => state.openWindow);
+  const projectFolders = useKernel((state) => state.projectFolders);
+
+  const allApps = getAllApps(projectFolders);
 
   return (
     <AnimatePresence>
@@ -20,7 +23,7 @@ const StartMenu: React.FC = () => {
           className="absolute bottom-14 left-1/2 -translate-x-1/2 w-[500px] h-[600px] bg-[hsl(var(--popover-hsl)/0.7)] taskbar-blur border border-[hsl(var(--border-hsl))] rounded-lg p-6 shadow-2xl"
         >
           <div className="grid grid-cols-4 gap-4">
-            {APPS.map((app) => (
+            {allApps.map((app) => (
               <Icon
                 key={app.id}
                 app={app}

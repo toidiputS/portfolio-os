@@ -6,7 +6,7 @@ import Taskbar from "./components/Taskbar";
 import Window from "./components/Window";
 import WelcomeScreen from "./components/WelcomeScreen";
 import Sidebar from "./components/Sidebar";
-import { APPS_CONFIG } from "./apps.config";
+import { getAllApps } from "./apps.config";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Analytics } from "@vercel/analytics/react";
@@ -15,6 +15,7 @@ const App: React.FC = () => {
   const windows = useKernel((state) => state.windows);
   const hasWelcomed = useKernel((state) => state.hasWelcomed);
   const setHasWelcomed = useKernel((state) => state.setHasWelcomed);
+  const projectFolders = useKernel((state) => state.projectFolders);
 
   const theme = useKernel((state) => state.theme);
 
@@ -46,7 +47,9 @@ const App: React.FC = () => {
         >
           <Desktop>
             {windows.map((win) => {
-              const App = APPS_CONFIG[win.appId]?.component;
+              const allApps = getAllApps(projectFolders);
+              const appDef = allApps.find(app => app.id === win.appId);
+              const App = appDef?.component;
               if (!App) return null;
               return (
                 <Window key={win.id} {...win}>
