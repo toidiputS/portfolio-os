@@ -7,6 +7,7 @@ import { APPS } from '../../apps.config';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { speak } from '../../components/VoiceAssistant';
+import { GlowCard } from '../../components/GlowCard';
 
 const GeminiChat: React.FC = () => {
   const gemini = useKernel(state => state.gemini);
@@ -173,74 +174,77 @@ const GeminiChat: React.FC = () => {
                   </div>
                 )}
 
-                <div className={`max-w-2xl p-4 rounded-2xl shadow-sm ${msg.role === 'user'
-                  ? 'bg-[hsl(var(--primary-hsl))] text-[hsl(var(--primary-foreground-hsl))] rounded-tr-sm'
-                  : 'bg-[hsl(var(--secondary-hsl))] border border-[hsl(var(--border-hsl))] rounded-tl-sm'
-                  }`}>
-                  <div className="prose prose-sm dark:prose-invert max-w-none wrap-break-word">
-                    <ReactMarkdown
-                      components={{
-                        code({ node, className, children, ...props }) {
-                          const match = /language-(\w+)/.exec(className || '')
-                          return match ? (
-                            <div className="rounded-md overflow-hidden my-2 border border-[hsl(var(--border-hsl))]">
-                              <div className="bg-[hsl(var(--muted-hsl))] px-3 py-1 text-xs font-mono text-[hsl(var(--muted-foreground-hsl))] border-b border-[hsl(var(--border-hsl))] flex items-center gap-2">
-                                <TerminalIcon size={12} />
-                                {match[1]}
+                <div className="max-w-2xl">
+                  <GlowCard
+                    glowColor={msg.role === 'user' ? 'blue' : 'purple'}
+                    customSize={true}
+                    className={`w-full p-4 aspect-auto! grid-rows-1! ${msg.role === 'user' ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
+                  >
+                    <div className="prose prose-sm dark:prose-invert max-w-none wrap-break-word">
+                      <ReactMarkdown
+                        components={{
+                          code({ node, className, children, ...props }) {
+                            const match = /language-(\w+)/.exec(className || '')
+                            return match ? (
+                              <div className="rounded-md overflow-hidden my-2 border border-[hsl(var(--border-hsl))]">
+                                <div className="bg-[hsl(var(--muted-hsl))] px-3 py-1 text-xs font-mono text-[hsl(var(--muted-foreground-hsl))] border-b border-[hsl(var(--border-hsl))] flex items-center gap-2">
+                                  <TerminalIcon size={12} />
+                                  {match[1]}
+                                </div>
+                                <pre className="bg-[hsl(var(--background-hsl))] p-3 overflow-x-auto m-0">
+                                  <code className={className} {...props}>
+                                    {children}
+                                  </code>
+                                </pre>
                               </div>
-                              <pre className="bg-[hsl(var(--background-hsl))] p-3 overflow-x-auto m-0">
-                                <code className={className} {...props}>
-                                  {children}
-                                </code>
-                              </pre>
-                            </div>
-                          ) : (
-                            <code className="bg-[hsl(var(--muted-hsl))] px-1.5 py-0.5 rounded text-xs font-mono" {...props}>
-                              {children}
-                            </code>
-                          )
-                        }
-                      }}
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
-                  </div>
-
-                  {/* Speak button for AI messages */}
-                  {msg.role === 'model' && (
-                    <button
-                      onClick={() => speak(msg.content)}
-                      className="mt-2 flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground-hsl))] hover:text-[hsl(var(--accent-hsl))] transition-colors"
-                      title="Read aloud"
-                    >
-                      <Volume2 size={12} />
-                      <span>Speak</span>
-                    </button>
-                  )}
-
-                  {msg.groundingChunks && msg.groundingChunks.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-[hsl(var(--border-hsl))/0.5]">
-                      <h4 className="text-[10px] uppercase tracking-wider font-bold opacity-50 mb-2 flex items-center gap-1">
-                        <Globe size={10} /> Sources
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {msg.groundingChunks.map((chunk, i) => (
-                          chunk.web ? (
-                            <a
-                              key={i}
-                              href={chunk.web.uri}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs bg-[hsl(var(--background-hsl))] hover:bg-[hsl(var(--accent-hsl))/0.1] border border-[hsl(var(--border-hsl))] hover:border-[hsl(var(--accent-hsl))] px-2 py-1 rounded-md transition-all truncate max-w-[200px] flex items-center gap-1"
-                              title={chunk.web.uri}
-                            >
-                              <span className="truncate">{chunk.web.title || new URL(chunk.web.uri).hostname}</span>
-                            </a>
-                          ) : null
-                        ))}
-                      </div>
+                            ) : (
+                              <code className="bg-[hsl(var(--muted-hsl))] px-1.5 py-0.5 rounded text-xs font-mono" {...props}>
+                                {children}
+                              </code>
+                            )
+                          }
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
                     </div>
-                  )}
+
+                    {/* Speak button for AI messages */}
+                    {msg.role === 'model' && (
+                      <button
+                        onClick={() => speak(msg.content)}
+                        className="mt-2 flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground-hsl))] hover:text-[hsl(var(--accent-hsl))] transition-colors"
+                        title="Read aloud"
+                      >
+                        <Volume2 size={12} />
+                        <span>Speak</span>
+                      </button>
+                    )}
+
+                    {msg.groundingChunks && msg.groundingChunks.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-[hsl(var(--border-hsl))/0.5]">
+                        <h4 className="text-[10px] uppercase tracking-wider font-bold opacity-50 mb-2 flex items-center gap-1">
+                          <Globe size={10} /> Sources
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {msg.groundingChunks.map((chunk, i) => (
+                            chunk.web ? (
+                              <a
+                                key={i}
+                                href={chunk.web.uri}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs bg-[hsl(var(--background-hsl))] hover:bg-[hsl(var(--accent-hsl))/0.1] border border-[hsl(var(--border-hsl))] hover:border-[hsl(var(--accent-hsl))] px-2 py-1 rounded-md transition-all truncate max-w-[200px] flex items-center gap-1"
+                                title={chunk.web.uri}
+                              >
+                                <span className="truncate">{chunk.web.title || new URL(chunk.web.uri).hostname}</span>
+                              </a>
+                            ) : null
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </GlowCard>
                 </div>
 
                 {msg.role === 'user' && (

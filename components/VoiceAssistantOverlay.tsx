@@ -98,7 +98,7 @@ const VoiceAssistantOverlay: React.FC = () => {
                             <GlowCard
                                 glowColor="purple"
                                 customSize={true}
-                                className="w-full p-3 !aspect-auto !grid-rows-1"
+                                className="w-full p-3 aspect-auto! grid-rows-1!"
                             >
                                 <p className="text-white text-sm leading-relaxed m-0">{bubble.text}</p>
                             </GlowCard>
