@@ -177,7 +177,7 @@ const GeminiChat: React.FC = () => {
                   ? 'bg-[hsl(var(--primary-hsl))] text-[hsl(var(--primary-foreground-hsl))] rounded-tr-sm'
                   : 'bg-[hsl(var(--secondary-hsl))] border border-[hsl(var(--border-hsl))] rounded-tl-sm'
                   }`}>
-                  <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+                  <div className="prose prose-sm dark:prose-invert max-w-none wrap-break-word">
                     <ReactMarkdown
                       components={{
                         code({ node, className, children, ...props }) {

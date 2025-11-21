@@ -9,7 +9,6 @@ const VoiceAssistant: React.FC = () => {
     const hasWelcomed = useKernel(state => state.hasWelcomed);
     const initialGreetingSpoken = useKernel(state => state.initialGreetingSpoken);
     const setInitialGreetingSpoken = useKernel(state => state.setInitialGreetingSpoken);
-    const micPermissionGranted = useKernel(state => state.micPermissionGranted);
 
     const hasTriggeredGreeting = useRef(false);
 
@@ -17,12 +16,11 @@ const VoiceAssistant: React.FC = () => {
         // Only trigger greeting once when:
         // 1. User has welcomed (transitioned to desktop)
         // 2. Initial greeting hasn't been spoken yet
-        // 3. Mic permission was granted
-        // 4. We haven't already triggered it (ref check)
+        // 3. We haven't already triggered it (ref check)
+        // Note: We don't need mic permission for TTS output!
         if (
             hasWelcomed &&
             !initialGreetingSpoken &&
-            micPermissionGranted &&
             !hasTriggeredGreeting.current
         ) {
             hasTriggeredGreeting.current = true;
@@ -31,9 +29,9 @@ const VoiceAssistant: React.FC = () => {
             setTimeout(() => {
                 speakGreeting();
                 setInitialGreetingSpoken(true);
-            }, 1000);
+            }, 1500);
         }
-    }, [hasWelcomed, initialGreetingSpoken, micPermissionGranted, setInitialGreetingSpoken]);
+    }, [hasWelcomed, initialGreetingSpoken, setInitialGreetingSpoken]);
 
     const speakGreeting = () => {
         const greetings = [
