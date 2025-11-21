@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useKernel } from '../../store/kernel';
 import { ChatMessage, GeminiModel, ChatSession, AppId } from '../../types';
-import { Send, Plus, Trash2, BrainCircuit, Bot, User, Globe, Sparkles, Terminal as TerminalIcon } from 'lucide-react';
+import { Send, Plus, Trash2, BrainCircuit, Bot, User, Globe, Sparkles, Terminal as TerminalIcon, Volume2 } from 'lucide-react';
 import { generateResponse, summarizeHistory, generateTitleForSession } from '../../services/geminiService';
 import { APPS } from '../../apps.config';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
+import { speak } from '../../components/VoiceAssistant';
 
 const GeminiChat: React.FC = () => {
   const gemini = useKernel(state => state.gemini);
@@ -204,6 +205,18 @@ const GeminiChat: React.FC = () => {
                       {msg.content}
                     </ReactMarkdown>
                   </div>
+
+                  {/* Speak button for AI messages */}
+                  {msg.role === 'model' && (
+                    <button
+                      onClick={() => speak(msg.content)}
+                      className="mt-2 flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground-hsl))] hover:text-[hsl(var(--accent-hsl))] transition-colors"
+                      title="Read aloud"
+                    >
+                      <Volume2 size={12} />
+                      <span>Speak</span>
+                    </button>
+                  )}
 
                   {msg.groundingChunks && msg.groundingChunks.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-[hsl(var(--border-hsl))/0.5]">
