@@ -46,7 +46,6 @@ const WelcomeScreen: React.FC = () => {
   const requestMicPermission = async () => {
     try {
       console.log("Requesting microphone permission...");
-      // Force fresh permission request by not using cached permission
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: false,
@@ -58,10 +57,18 @@ const WelcomeScreen: React.FC = () => {
       // Start fade out immediately after mic permission is granted
       setIsFadingOut(true);
     } catch (error) {
-      console.error("Mic permission denied or failed:", error);
-      // Still proceed to desktop even if mic fails
+      console.log("Mic permission denied or not available:", error);
+      // Still allow TTS to work - just won't have voice input
+      setMicPermissionGranted(false);
+      // Still proceed to desktop
       setIsFadingOut(true);
     }
+  };
+
+  const skipMicPermission = () => {
+    console.log("User skipped microphone permission");
+    setMicPermissionGranted(false);
+    setIsFadingOut(true);
   };
 
   const proceedWithWelcome = () => {
@@ -185,17 +192,31 @@ const WelcomeScreen: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-md rounded-lg p-4 shadow-xl border border-white/20 min-w-[200px] z-50"
+                className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-md rounded-lg p-4 shadow-xl border border-white/20 min-w-[280px] z-50"
               >
-                <p className="text-white text-sm mb-3 text-center">
-                  Allow microphone access to enable voice assistant
+                <p className="text-white text-sm mb-3 text-center font-medium">
+                  Enable Voice Assistant?
                 </p>
-                <button
-                  onClick={requestMicPermission}
-                  className="w-full bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-md font-semibold transition-colors"
-                >
-                  Allow Microphone
-                </button>
+                <p className="text-zinc-400 text-xs mb-4 text-center">
+                  Microphone access allows voice commands (optional)
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={skipMicPermission}
+                    className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-md font-medium transition-colors text-sm"
+                  >
+                    Skip
+                  </button>
+                  <button
+                    onClick={requestMicPermission}
+                    className="flex-1 bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-md font-semibold transition-colors text-sm"
+                  >
+                    Allow
+                  </button>
+                </div>
+                <p className="text-zinc-500 text-[10px] mt-2 text-center">
+                  Voice responses work without a microphone
+                </p>
               </motion.div>
             )}
           </div>
