@@ -1355,21 +1355,22 @@
 
 /* 2. Waveform Animation (Chaotic) */
 .int-wave {
+  stroke-dasharray: 30;
   animation: intWaveMove 2s ease-in-out infinite;
 }
 
 @keyframes intWaveMove {
   0%, 100% {
-    d: path("M 0 8 Q 2 2, 4 8 Q 6 14, 8 6 Q 10 0, 12 10");
+    stroke-dashoffset: 0;
   }
   25% {
-    d: path("M 0 6 Q 2 12, 4 4 Q 6 10, 8 2 Q 10 8, 12 6");
+    stroke-dashoffset: 7.5;
   }
   50% {
-    d: path("M 0 10 Q 2 4, 4 10 Q 6 2, 8 12 Q 10 6, 12 4");
+    stroke-dashoffset: 15;
   }
   75% {
-    d: path("M 0 4 Q 2 10, 4 6 Q 6 8, 8 10 Q 10 2, 12 8");
+    stroke-dashoffset: 22.5;
   }
 }
 
