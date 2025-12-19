@@ -1,6 +1,6 @@
 {
-  "name": "Doors OS",
-  "description": "A feature-rich portfolio application designed to mimic the Windows 11 desktop experience, complete with draggable windows, a taskbar, a start menu, and integrated Gemini AI chat functionality.",
+  "name": "Oracle OS",
+  "description": "An AI-powered operating system interface that serves as your personal guide through a comprehensive ecosystem of web applications. Featuring an intelligent Oracle AI assistant, holographic animations, and a desktop-like experience for discovering and interacting with PWAs.",
   "requestFramePermissions": [
     "microphone"
   ]
