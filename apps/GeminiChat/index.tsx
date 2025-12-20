@@ -303,7 +303,7 @@ const GeminiChat: React.FC = () => {
                         </h4>
                         <div className="flex flex-wrap gap-2">
                           {msg.groundingChunks.map((chunk, i) =>
-                            chunk.web ? (
+                            chunk.web && (
                               <a
                                 key={i}
                                 href={chunk.web.uri}
@@ -317,7 +317,7 @@ const GeminiChat: React.FC = () => {
                                     new URL(chunk.web.uri).hostname}
                                 </span>
                               </a>
-                            ) : null
+                            )
                           )}
                         </div>
                       </div>

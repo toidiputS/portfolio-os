@@ -268,7 +268,7 @@ const Terminal: React.FC = () => {
                 break;
         }
 
-        setOutput(prev => [...prev, { type: 'input', text: `> ${command}` }, ...cmdOutput]);
+        setOutput(prev => [...prev, { type: 'input' as const, text: `> ${command}` }, ...cmdOutput]);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
