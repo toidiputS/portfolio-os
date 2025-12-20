@@ -1,9 +1,9 @@
-import express from 'express';
-import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import dotenv from 'dotenv';
+import express from "express";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -13,77 +13,111 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static(path.join(__dirname, "dist")));
 
 const apiKey = process.env.GEMINI_API_KEY;
 const anthropicKey = process.env.ANTHROPIC_API_KEY;
-const localAssistantUrl = process.env.LOCAL_ASSISTANT_URL || 'http://localhost:8000/generate';
-console.log('=== Server Startup ===');
-console.log('API Key present:', !!apiKey);
-console.log('API Key starts with:', apiKey ? apiKey.substring(0, 10) + '...' : 'NOT SET');
-console.log('Anthropic Key present:', !!anthropicKey);
+const localAssistantUrl =
+  process.env.LOCAL_ASSISTANT_URL || "http://localhost:8000/generate";
+console.log("=== Server Startup ===");
+console.log("API Key present:", !!apiKey);
+console.log(
+  "API Key starts with:",
+  apiKey ? apiKey.substring(0, 10) + "..." : "NOT SET"
+);
+console.log("Anthropic Key present:", !!anthropicKey);
 
 const genAI = new GoogleGenerativeAI(apiKey);
 
-app.post('/api/gemini:generate', async (req, res) => {
+app.post("/api/gemini:generate", async (req, res) => {
   try {
-    const { model: modelName, contents, generationConfig, tools, systemInstruction } = req.body;
+    const {
+      model: modelName,
+      contents,
+      generationConfig,
+      tools,
+      systemInstruction,
+    } = req.body;
 
-    console.log('=== Gemini API Request ===');
-    console.log('Model:', modelName || 'gemini-pro');
-    console.log('API Key available:', !!apiKey);
-    console.log('Contents length:', contents?.length);
-    console.log('Contents preview:', JSON.stringify(contents?.slice(0, 2), null, 2));
+    console.log("=== Gemini API Request ===");
+    console.log("Model:", modelName || "gemini-pro");
+    console.log("API Key available:", !!apiKey);
+    console.log("Contents length:", contents?.length);
+    console.log(
+      "Contents preview:",
+      JSON.stringify(contents?.slice(0, 2), null, 2)
+    );
     // If the requested model is an Anthropic/Claude model, route to Anthropic API
-    if (modelName && modelName.toLowerCase().startsWith('claude')) {
-          // If the requested model is a local assistant, proxy to the configured local endpoint
-          if (modelName === 'local-assistant' || (modelName && modelName.toLowerCase().startsWith('local:'))) {
-            try {
-              console.log('Routing request to local assistant at', localAssistantUrl);
+    if (modelName && modelName.toLowerCase().startsWith("claude")) {
+      // If the requested model is a local assistant, proxy to the configured local endpoint
+      if (
+        modelName === "local-assistant" ||
+        (modelName && modelName.toLowerCase().startsWith("local:"))
+      ) {
+        try {
+          console.log(
+            "Routing request to local assistant at",
+            localAssistantUrl
+          );
 
-              // If callers used modelName like 'local:my-assistant', include that name in the body
-              const localBody = {
-                model: modelName,
-                contents,
-                generationConfig,
-                systemInstruction,
-              };
+          // If callers used modelName like 'local:my-assistant', include that name in the body
+          const localBody = {
+            model: modelName,
+            contents,
+            generationConfig,
+            systemInstruction,
+          };
 
-              const localRes = await fetch(localAssistantUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(localBody),
-              });
+          const localRes = await fetch(localAssistantUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(localBody),
+          });
 
-              const localData = await localRes.json();
+          const localData = await localRes.json();
 
-              // Expect local server to return either { candidates: [...] } or { text: '...' }
-              if (localData.candidates) {
-                return res.json(localData);
-              }
-
-              const text = localData.text || localData.completion || '';
-              return res.json({ candidates: [{ content: { parts: [{ text }], role: 'assistant' } }] });
-            } catch (err) {
-              console.error('Error calling local assistant:', err);
-              return res.status(500).json({ error: 'Local assistant request failed.' });
-            }
+          // Expect local server to return either { candidates: [...] } or { text: '...' }
+          if (localData.candidates) {
+            return res.json(localData);
           }
 
+          const text = localData.text || localData.completion || "";
+          return res.json({
+            candidates: [{ content: { parts: [{ text }], role: "assistant" } }],
+          });
+        } catch (err) {
+          console.error("Error calling local assistant:", err);
+          return res
+            .status(500)
+            .json({ error: "Local assistant request failed." });
+        }
+      }
+
       if (!anthropicKey) {
-        console.error('Anthropic API key not set but Claude model requested');
-        return res.status(500).json({ error: 'Anthropic API key not configured on server.' });
+        console.error("Anthropic API key not set but Claude model requested");
+        return res
+          .status(500)
+          .json({ error: "Anthropic API key not configured on server." });
       }
 
       // Convert the Google-style contents array into a single prompt string suitable for Anthropic
       const buildText = (items) => {
-        return items
-          .map((c) => {
-            const roleLabel = c.role === 'user' ? 'Human' : c.role === 'model' ? 'Assistant' : (c.role || 'System');
-            const partText = (c.parts || []).map(p => p.text || '').join('\n');
-            return `${roleLabel}: ${partText}`;
-          })
-          .join('\n') + '\nAssistant:';
+        return (
+          items
+            .map((c) => {
+              const roleLabel =
+                c.role === "user"
+                  ? "Human"
+                  : c.role === "model"
+                  ? "Assistant"
+                  : c.role || "System";
+              const partText = (c.parts || [])
+                .map((p) => p.text || "")
+                .join("\n");
+              return `${roleLabel}: ${partText}`;
+            })
+            .join("\n") + "\nAssistant:"
+        );
       };
 
       const prompt = buildText(contents || []);
@@ -95,11 +129,11 @@ app.post('/api/gemini:generate', async (req, res) => {
         temperature: generationConfig?.temperature ?? 0.0,
       };
 
-      const anthRes = await fetch('https://api.anthropic.com/v1/complete', {
-        method: 'POST',
+      const anthRes = await fetch("https://api.anthropic.com/v1/complete", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': anthropicKey,
+          "Content-Type": "application/json",
+          "x-api-key": anthropicKey,
         },
         body: JSON.stringify(anthropicBody),
       });
@@ -107,13 +141,14 @@ app.post('/api/gemini:generate', async (req, res) => {
       const anthData = await anthRes.json();
 
       // Anthropic returns a `completion` field (string). Normalize to the same response shape.
-      const completionText = anthData.completion || anthData.completion?.content || '';
+      const completionText =
+        anthData.completion || anthData.completion?.content || "";
 
       const candidates = [
         {
           content: {
             parts: [{ text: completionText }],
-            role: 'assistant',
+            role: "assistant",
           },
         },
       ];
@@ -123,7 +158,7 @@ app.post('/api/gemini:generate', async (req, res) => {
 
     // Default: use Google Generative AI
     const model = genAI.getGenerativeModel({
-      model: modelName || 'models/gemini-1.0-pro',
+      model: modelName || "models/gemini-1.0-pro",
       generationConfig,
       tools,
       systemInstruction,
@@ -159,26 +194,26 @@ app.post('/api/gemini:generate', async (req, res) => {
       }
     }
 
-    console.log('=== Gemini API Success ===');
+    console.log("=== Gemini API Success ===");
     res.json({
       candidates,
       error: response.error ? { message: response.error.message } : undefined,
     });
   } catch (error) {
-    console.error('=== Gemini API Error ===');
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    console.error('Full error:', error);
+    console.error("=== Gemini API Error ===");
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    console.error("Full error:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
 // Serve the React app for any non-API routes
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api')) return next();
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  if (req.path.startsWith("/api")) return next();
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
 app.listen(3002, () => {
-  console.log('Server running on http://localhost:3002');
+  console.log("Server running on http://localhost:3002");
 });
