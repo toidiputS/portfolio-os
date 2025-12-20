@@ -19,6 +19,7 @@ export { BIcon } from './BIcon';
 export { CIcon } from './CIcon';
 export { DIcon } from './DIcon';
 export { EIcon } from './EIcon';
+export { FIcon } from './FIcon';
 export { EnvoyIcon, FloIcon, GrindIcon, HelperIcon, InterpreterIcon, JamIcon, KinIcon, ListenIcon } from './HoloLiteWrapper';
 export { HoloMediumIcon } from './HoloMediumIcons';
 export { FileViewerIcon } from './FileViewerIcon';
